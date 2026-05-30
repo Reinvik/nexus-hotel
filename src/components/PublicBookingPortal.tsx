@@ -1256,18 +1256,59 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">URL del Logotipo (Logo Hotel)</label>
-                      <input
-                        type="text"
-                        value={logoUrl}
-                        onChange={(e) => setLogoUrl(e.target.value)}
-                        placeholder="https://ejemplo.com/logo.png"
-                        className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
-                      />
+                    <div className="space-y-3">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider block">Logotipo del Hotel</label>
+                      
+                      {/* File Upload Input */}
+                      <div className="bg-[#131c2e] p-4 rounded-xl border border-white/5 space-y-2 text-center">
+                        <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider leading-tight">Subir archivo de imagen (PNG, JPG, SVG)</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                setLogoUrl(reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="hidden"
+                          id="logo-file-upload-live"
+                        />
+                        <label
+                          htmlFor="logo-file-upload-live"
+                          className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[9px] font-black uppercase tracking-widest cursor-pointer transition-colors mt-1"
+                        >
+                          Seleccionar Archivo de Logo
+                        </label>
+                      </div>
+
+                      {/* Or URL input */}
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-black uppercase text-slate-500 block">O ingresa la URL de la imagen del logotipo:</span>
+                        <input
+                          type="text"
+                          value={logoUrl}
+                          onChange={(e) => setLogoUrl(e.target.value)}
+                          placeholder="https://ejemplo.com/logo.png"
+                          className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                        />
+                      </div>
+
                       {logoUrl && (
-                        <div className="mt-2 p-2 bg-[#0e1726] rounded-xl inline-block border border-white/5">
-                          <img src={logoUrl} alt="Vista previa logo" className="h-10 object-contain" onError={(e) => { (e.target as any).style.display = 'none'; }} />
+                        <div className="mt-2 p-2 bg-[#0e1726] rounded-xl inline-block border border-white/5 relative group">
+                          <img src={logoUrl} alt="Vista previa logo" className="h-10 object-contain rounded" onError={(e) => { (e.target as any).style.display = 'none'; }} />
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl('')}
+                            className="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-700 text-white p-1 rounded-full text-[8px] font-black w-4 h-4 flex items-center justify-center shadow-lg border border-red-700"
+                            title="Quitar Logo"
+                          >
+                            ×
+                          </button>
                         </div>
                       )}
                     </div>
