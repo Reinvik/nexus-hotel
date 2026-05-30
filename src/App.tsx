@@ -8,7 +8,6 @@ import { CleaningDashboard } from './components/CleaningDashboard';
 import { AdminSettings } from './components/AdminSettings';
 import { NexusOwnerDashboard } from './components/NexusOwnerDashboard';
 import { 
-  Bed, 
   LogOut, 
   User, 
   Lock, 
@@ -19,7 +18,8 @@ import {
   ExternalLink,
   Sliders,
   Globe,
-  Building2
+  Building2,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -234,16 +234,13 @@ function App() {
               <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Bed className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-black text-sm uppercase tracking-wider">
+              {(currentCompany?.name || 'Nexus Hotel').substring(0, 2)}
             </div>
           )}
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-base font-black tracking-tight text-white uppercase font-sans">{currentCompany?.name || 'Nexus Hotel'}</span>
-              <span className="text-[8px] bg-emerald-500/20 text-emerald-400 font-extrabold uppercase px-1.5 py-0.5 rounded tracking-widest border border-emerald-500/10">
-                SmartLean
-              </span>
             </div>
             <p className="text-[9px] text-slate-500 font-extrabold uppercase tracking-widest mt-0.5">
               {profile?.company_id ? 'Consola Operativa' : 'Portal de Reserva'}
@@ -252,87 +249,94 @@ function App() {
         </div>
 
         {/* Desktop Navigation Tabs */}
-        <nav className="hidden lg:flex items-center gap-1 bg-[#121b2d] p-1.5 rounded-2xl border border-white/5">
-          <button
-            onClick={() => setActiveView('portal')}
-            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-              activeView === 'portal'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Portal Público
-          </button>
+        {session ? (
+          <nav className="hidden lg:flex items-center gap-1 bg-[#121b2d] p-1.5 rounded-2xl border border-white/5">
+            <button
+              onClick={() => setActiveView('portal')}
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                activeView === 'portal'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Portal Público
+            </button>
 
-          {session && profile && (
-            <>
-              {(profile.role === 'admin' || profile.role === 'receptionist') && (
-                <>
+            {profile && (
+              <>
+                {(profile.role === 'admin' || profile.role === 'receptionist') && (
+                  <>
+                    <button
+                      onClick={() => setActiveView('kanban')}
+                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                        activeView === 'kanban'
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Gemba Kanban
+                    </button>
+                    <button
+                      onClick={() => setActiveView('calendar')}
+                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                        activeView === 'calendar'
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Calendario
+                    </button>
+                  </>
+                )}
+
+                {(profile.role === 'admin' || profile.role === 'cleaner') && (
                   <button
-                    onClick={() => setActiveView('kanban')}
+                    onClick={() => setActiveView('cleaning')}
                     className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                      activeView === 'kanban'
+                      activeView === 'cleaning'
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    Gemba Kanban
+                    Limpieza
                   </button>
+                )}
+
+                {profile.role === 'admin' && (
                   <button
-                    onClick={() => setActiveView('calendar')}
+                    onClick={() => setActiveView('admin')}
                     className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                      activeView === 'calendar'
+                      activeView === 'admin'
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    Calendario
+                    Ajustes
                   </button>
-                </>
-              )}
+                )}
 
-              {(profile.role === 'admin' || profile.role === 'cleaner') && (
-                <button
-                  onClick={() => setActiveView('cleaning')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                    activeView === 'cleaning'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Limpieza
-                </button>
-              )}
-
-              {profile.role === 'admin' && (
-                <button
-                  onClick={() => setActiveView('admin')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                    activeView === 'admin'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Ajustes
-                </button>
-              )}
-
-              {profile.email === NEXUS_OWNER_EMAIL && (
-                <button
-                  onClick={() => setActiveView('nexusowner')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                    activeView === 'nexusowner'
-                      ? 'bg-amber-500 text-black shadow-md'
-                      : 'text-amber-400/70 hover:text-amber-400'
-                  }`}
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  NexusOwner
-                </button>
-              )}
-            </>
-          )}
-        </nav>
+                {profile.email === NEXUS_OWNER_EMAIL && (
+                  <button
+                    onClick={() => setActiveView('nexusowner')}
+                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                      activeView === 'nexusowner'
+                        ? 'bg-amber-500 text-black shadow-md'
+                        : 'text-amber-400/70 hover:text-amber-400'
+                    }`}
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    NexusOwner
+                  </button>
+                )}
+              </>
+            )}
+          </nav>
+        ) : (
+          <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-blue-500/10 rounded-2xl border border-blue-500/20 text-blue-400 font-extrabold uppercase text-[10px] tracking-widest shadow-sm shadow-blue-500/5 animate-pulse-subtle">
+            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+            <span>Sistema de Reserva Garantizado</span>
+          </div>
+        )}
 
         {/* Right controls wrapper with Quick View selector */}
         <div className="flex items-center gap-3">
@@ -360,20 +364,22 @@ function App() {
             </div>
           )}
 
-          {/* Quick View selector (visible everywhere for easy testing) */}
-          <div className="flex items-center gap-1.5 bg-[#121b2d] px-2.5 py-1.5 rounded-xl border border-white/5 shadow-sm">
-            <Sliders className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-            <select
-              value={activeView === 'portal' && !session ? 'guest' : profile?.role || 'guest'}
-              onChange={(e) => handleQuickViewChange(e.target.value as any)}
-              className="bg-transparent border-none text-[10px] font-black uppercase tracking-wider text-slate-300 outline-none cursor-pointer pr-1"
-            >
-              <option value="guest" className="bg-[#0c1221] text-slate-300">Huésped</option>
-              <option value="receptionist" className="bg-[#0c1221] text-slate-300">Recepcionista</option>
-              <option value="cleaner" className="bg-[#0c1221] text-slate-300">Camarera</option>
-              <option value="admin" className="bg-[#0c1221] text-slate-300">Administrador</option>
-            </select>
-          </div>
+          {/* Quick View selector (visible only to logged-in users) */}
+          {session && (
+            <div className="flex items-center gap-1.5 bg-[#121b2d] px-2.5 py-1.5 rounded-xl border border-white/5 shadow-sm">
+              <Sliders className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              <select
+                value={activeView === 'portal' && !session ? 'guest' : profile?.role || 'guest'}
+                onChange={(e) => handleQuickViewChange(e.target.value as any)}
+                className="bg-transparent border-none text-[10px] font-black uppercase tracking-wider text-slate-300 outline-none cursor-pointer pr-1"
+              >
+                <option value="guest" className="bg-[#0c1221] text-slate-300">Huésped</option>
+                <option value="receptionist" className="bg-[#0c1221] text-slate-300">Recepcionista</option>
+                <option value="cleaner" className="bg-[#0c1221] text-slate-300">Camarera</option>
+                <option value="admin" className="bg-[#0c1221] text-slate-300">Administrador</option>
+              </select>
+            </div>
+          )}
 
           {/* Desktop Right Side Controls */}
           <div className="hidden lg:flex items-center gap-4">

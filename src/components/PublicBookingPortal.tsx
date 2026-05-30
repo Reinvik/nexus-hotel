@@ -209,6 +209,13 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
 
   const daysCount = Math.max(differenceInDays(parseISO(checkOut), parseISO(checkIn)), 1);
 
+  // Recalculate dynamic payment amount based on nights count and selected room
+  useEffect(() => {
+    if (selectedRoom) {
+      setPaymentAmount(selectedRoom.price_per_day * daysCount);
+    }
+  }, [selectedRoom, daysCount]);
+
   const handleStartBooking = (room: Room) => {
     setSelectedRoom(room);
     setPaymentAmount(room.price_per_day * daysCount);
@@ -826,6 +833,35 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
 
                 {selectedRoom ? (
                   <form onSubmit={handleOpenPayment} className="space-y-4">
+                    {/* Inputs de fecha interactivos integrados en la tarjeta lateral */}
+                    <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-2xl space-y-3">
+                      <span className="text-[10px] text-slate-700 font-black uppercase tracking-wider block border-b border-slate-200 pb-1.5">
+                        Ajustar Fechas de Estadía
+                      </span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1 text-left">
+                          <label className="text-[8px] font-black text-slate-550 uppercase tracking-widest">Check-in</label>
+                          <input
+                            type="date"
+                            value={checkIn}
+                            min={format(new Date(), 'yyyy-MM-dd')}
+                            onChange={handleCheckInChange}
+                            className="w-full px-2 py-1.5 bg-white border border-slate-350 rounded-lg text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
+                          />
+                        </div>
+                        <div className="space-y-1 text-left">
+                          <label className="text-[8px] font-black text-slate-550 uppercase tracking-widest">Check-out</label>
+                          <input
+                            type="date"
+                            value={checkOut}
+                            min={format(addDays(parseISO(checkIn), 1), 'yyyy-MM-dd')}
+                            onChange={(e) => setCheckOut(e.target.value)}
+                            className="w-full px-2 py-1.5 bg-white border border-slate-350 rounded-lg text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Summary Box */}
                     <div className="bg-[#121c30] rounded-2xl p-4 border border-white/5 space-y-2 text-xs text-left">
                       <div className="flex justify-between">
