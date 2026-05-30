@@ -188,28 +188,35 @@ function App() {
   const companyId = selectedCompanyId || profile?.company_id || '20a9a13f-e8b2-4d2d-a16b-d36c57f7eb9b'; // Fallback to selected hotel or profile or demo hotel ID
 
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const [currentCompany, setCurrentCompany] = useState<any>(null);
 
   useEffect(() => {
     if (!companyId) return;
     
-    const fetchLogo = async () => {
+    const fetchCompanyAndLogo = async () => {
       try {
         const { data, error } = await hotelRpc.getSettings(companyId);
         if (!error && data) {
           const setData = Array.isArray(data) ? data[0] : data;
           setLogoUrl(setData?.logo_url || '');
         }
+
+        const { data: compData, error: compError } = await hotelRpc.getCompany(companyId);
+        if (!compError && compData) {
+          const c = Array.isArray(compData) ? compData[0] : compData;
+          setCurrentCompany(c);
+        }
       } catch (err) {
-        console.error('Error fetching logo:', err);
+        console.error('Error fetching company details:', err);
       }
     };
 
-    fetchLogo();
+    fetchCompanyAndLogo();
 
     // Listen to settings update events to refetch logo in live editing
-    window.addEventListener('hotel-settings-updated', fetchLogo);
+    window.addEventListener('hotel-settings-updated', fetchCompanyAndLogo);
     return () => {
-      window.removeEventListener('hotel-settings-updated', fetchLogo);
+      window.removeEventListener('hotel-settings-updated', fetchCompanyAndLogo);
     };
   }, [companyId]);
 
@@ -233,7 +240,7 @@ function App() {
           )}
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base font-black tracking-tight text-white uppercase font-sans">Nexus Hotel</span>
+              <span className="text-base font-black tracking-tight text-white uppercase font-sans">{currentCompany?.name || 'Nexus Hotel'}</span>
               <span className="text-[8px] bg-emerald-500/20 text-emerald-400 font-extrabold uppercase px-1.5 py-0.5 rounded tracking-widest border border-emerald-500/10">
                 SmartLean
               </span>
@@ -332,7 +339,13 @@ function App() {
           {/* Hotel Selector (visible to admin or Ariel Mellag) */}
           {(profile?.role === 'admin' || profile?.email === NEXUS_OWNER_EMAIL) && companies.length > 0 && (
             <div className="flex items-center gap-1.5 bg-[#121b2d] px-2.5 py-1.5 rounded-xl border border-white/5 shadow-sm">
-              <Building2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              {logoUrl ? (
+                <div className="w-3.5 h-3.5 shrink-0 rounded bg-white flex items-center justify-center p-0.5 overflow-hidden border border-white/10">
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                </div>
+              ) : (
+                <Building2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              )}
               <select
                 value={companyId}
                 onChange={(e) => setSelectedCompanyId(e.target.value)}
@@ -645,16 +658,12 @@ function App() {
 
       {/* Lean Footer */}
       <footer className="py-6 px-8 border-t border-white/5 text-center text-[10px] text-slate-500 font-extrabold uppercase tracking-wider flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0a0f19] mt-12">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mx-auto sm:mx-0">
           <span>© 2026 NEXUS HOTEL — FILOSOFÍA SMARTLEAN</span>
           <span className="h-3.5 w-[1px] bg-white/10" />
           <a href="https://smartlean.cl" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-0.5">
             smartlean.cl <ExternalLink className="w-2.5 h-2.5" />
           </a>
-        </div>
-        <div className="flex items-center gap-1">
-          <span>Diseño Premium por</span>
-          <span className="text-white font-black tracking-widest hover:text-blue-400 transition-colors cursor-pointer">ANTIGRAVITY</span>
         </div>
       </footer>
     </div>
