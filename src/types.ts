@@ -106,3 +106,16 @@ export interface HotelSettings {
   features?: string[] | null;
   created_at: string;
 }
+
+export interface PricingRule {
+  id: string;
+  company_id: string;
+  room_id?: string | null;
+  name: string;
+  rule_type: 'day_of_week' | 'special_date';
+  day_of_week?: number | null;
+  special_date?: string | null;
+  adjustment_type: 'fixed' | 'multiplier' | 'percentage';
+  adjustment_value: number;
+  created_at: string;
+}

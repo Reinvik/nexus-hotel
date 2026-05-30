@@ -85,6 +85,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
   const [features, setFeatures] = useState<string[]>(['Wi-Fi de Alta Velocidad', 'Desayuno Buffet Incluido', 'Servicio a la Habitación 24/7', 'Estacionamiento Gratuito']);
   const [themePrimary, setThemePrimary] = useState('#3b82f6');
   const [logoUrl, setLogoUrl] = useState('');
+  const [pricingRules, setPricingRules] = useState<any[]>([]);
   
   // Live Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -129,11 +130,11 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
     loadCompanies();
   }, [profile]);
 
-  // Fetch rooms, bookings, and settings for selected hotel
+  // Fetch rooms, bookings, settings, and pricing rules for selected hotel
   useEffect(() => {
     if (!selectedCompanyId) return;
 
-    async function loadHotelData() {
+    const loadHotelData = async () => {
       setLoading(true);
       try {
         // Fetch rooms
@@ -171,13 +172,26 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
           setThemePrimary('#3b82f6');
           setLogoUrl('');
         }
+
+        // Fetch pricing rules
+        const { data: rulesData, error: rulesError } = await hotelRpc.getPricingRules(selectedCompanyId);
+        if (!rulesError && rulesData) {
+          setPricingRules(rulesData as any[]);
+        }
       } catch (err) {
         console.error('Error loading hotel data:', err);
       } finally {
         setLoading(false);
       }
-    }
+    };
+
     loadHotelData();
+
+    // Listen to settings update events to refetch rules in live editing
+    window.addEventListener('hotel-settings-updated', loadHotelData);
+    return () => {
+      window.removeEventListener('hotel-settings-updated', loadHotelData);
+    };
   }, [selectedCompanyId]);
 
   // Handle date changes
@@ -209,16 +223,130 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
 
   const daysCount = Math.max(differenceInDays(parseISO(checkOut), parseISO(checkIn)), 1);
 
+  const getDynamicCalculation = () => {
+    if (!selectedRoom) return { total: 0, breakdown: [] };
+    
+    const start = parseISO(checkIn);
+    const breakdown = [];
+    let total = 0;
+
+    for (let i = 0; i < daysCount; i++) {
+      const currentDate = addDays(start, i);
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+      const basePrice = selectedRoom.price_per_day;
+      let finalPrice = basePrice;
+      let appliedRule = null;
+
+      // Filter rules that are either global (room_id is null) or specific to this room
+      const relevantRules = pricingRules.filter(r => !r.room_id || r.room_id === selectedRoom.id);
+
+      // 1. Look for special date rule
+      const specialDateRule = relevantRules.find(
+        r => r.rule_type === 'special_date' && r.special_date === dateStr
+      );
+
+      if (specialDateRule) {
+        appliedRule = specialDateRule;
+      } else {
+        // 2. Look for day of week rule
+        const dowRule = relevantRules.find(
+          r => r.rule_type === 'day_of_week' && r.day_of_week === dayOfWeek
+        );
+        if (dowRule) {
+          appliedRule = dowRule;
+        }
+      }
+
+      if (appliedRule) {
+        const val = Number(appliedRule.adjustment_value);
+        if (appliedRule.adjustment_type === 'fixed') {
+          finalPrice = val;
+        } else if (appliedRule.adjustment_type === 'multiplier') {
+          finalPrice = basePrice * val;
+        } else if (appliedRule.adjustment_type === 'percentage') {
+          finalPrice = basePrice * (1 + val / 100);
+        }
+      }
+
+      total += finalPrice;
+      breakdown.push({
+        date: currentDate,
+        dateStr,
+        basePrice,
+        finalPrice: Math.round(finalPrice),
+        ruleName: appliedRule?.name,
+        adjustmentType: appliedRule?.adjustment_type,
+        adjustmentValue: appliedRule?.adjustment_value
+      });
+    }
+
+    return { total: Math.round(total), breakdown };
+  };
+
+  const { total: dynamicTotal, breakdown: pricingBreakdown } = getDynamicCalculation();
+
+  const getRoomCalculation = (room: Room) => {
+    const start = parseISO(checkIn);
+    let total = 0;
+    let hasRules = false;
+
+    for (let i = 0; i < daysCount; i++) {
+      const currentDate = addDays(start, i);
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      const dayOfWeek = currentDate.getDay();
+
+      const basePrice = room.price_per_day;
+      let finalPrice = basePrice;
+      let appliedRule = null;
+
+      const relevantRules = pricingRules.filter(r => !r.room_id || r.room_id === room.id);
+
+      const specialDateRule = relevantRules.find(
+        r => r.rule_type === 'special_date' && r.special_date === dateStr
+      );
+
+      if (specialDateRule) {
+        appliedRule = specialDateRule;
+      } else {
+        const dowRule = relevantRules.find(
+          r => r.rule_type === 'day_of_week' && r.day_of_week === dayOfWeek
+        );
+        if (dowRule) {
+          appliedRule = dowRule;
+        }
+      }
+
+      if (appliedRule) {
+        hasRules = true;
+        const val = Number(appliedRule.adjustment_value);
+        if (appliedRule.adjustment_type === 'fixed') {
+          finalPrice = val;
+        } else if (appliedRule.adjustment_type === 'multiplier') {
+          finalPrice = basePrice * val;
+        } else if (appliedRule.adjustment_type === 'percentage') {
+          finalPrice = basePrice * (1 + val / 100);
+        }
+      }
+
+      total += finalPrice;
+    }
+
+    return { total: Math.round(total), avg: Math.round(total / daysCount), hasRules };
+  };
+
   // Recalculate dynamic payment amount based on nights count and selected room
   useEffect(() => {
     if (selectedRoom) {
-      setPaymentAmount(selectedRoom.price_per_day * daysCount);
+      setPaymentAmount(dynamicTotal);
     }
-  }, [selectedRoom, daysCount]);
+  }, [selectedRoom, dynamicTotal]);
 
   const handleStartBooking = (room: Room) => {
     setSelectedRoom(room);
-    setPaymentAmount(room.price_per_day * daysCount);
+    const calc = getRoomCalculation(room);
+    setPaymentAmount(calc.total);
     setTimeout(() => {
       document.getElementById('booking-form-section')?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
@@ -712,6 +840,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                       const available = isRoomAvailable(room.id);
                       const isSelected = selectedRoom?.id === room.id;
                       const coverImage = room.image_url || ROOM_FALLBACK_IMAGES[room.type as keyof typeof ROOM_FALLBACK_IMAGES] || ROOM_FALLBACK_IMAGES.Single;
+                      const { total: roomTotal, avg: roomAvg, hasRules: roomHasRules } = getRoomCalculation(room);
 
                       return (
                         <div 
@@ -774,8 +903,24 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
 
                             <div className="flex justify-between items-center border-t border-white/5 pt-4">
                               <div>
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Precio por noche</span>
-                                <span className="text-base font-black text-white">${room.price_per_day.toLocaleString('es-CL')} CLP</span>
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">
+                                  {daysCount > 1 ? 'Promedio por noche' : 'Precio por noche'}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-base font-black text-white">
+                                    ${(daysCount > 1 ? roomAvg : roomTotal).toLocaleString('es-CL')} CLP
+                                  </span>
+                                  {roomHasRules && (
+                                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md text-[8px] font-extrabold uppercase tracking-wider">
+                                      Tarifa Especial
+                                    </span>
+                                  )}
+                                </div>
+                                {daysCount > 1 && (
+                                  <span className="text-[9px] font-bold text-slate-400 block mt-0.5">
+                                    Total: ${roomTotal.toLocaleString('es-CL')} por {daysCount} noches
+                                  </span>
+                                )}
                               </div>
                               
                               {available && (
@@ -872,6 +1017,40 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                         <span className="text-slate-500 uppercase font-black">Noches</span>
                         <span className="text-white font-bold">{daysCount} noche{daysCount > 1 ? 's' : ''}</span>
                       </div>
+                      
+                      {/* Desglose interactivo noche a noche */}
+                      {pricingBreakdown.length > 0 && (
+                        <div className="bg-[#090d16]/60 rounded-xl p-3 border border-white/5 space-y-2 mt-2">
+                          <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block border-b border-white/5 pb-1">
+                            Desglose de Tarifas
+                          </span>
+                          <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                            {pricingBreakdown.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-start text-[10px]">
+                                <div className="text-slate-350">
+                                  <span className="capitalize">{format(item.date, "eeee dd 'de' MMM", { locale: es })}</span>
+                                  {item.ruleName && (
+                                    <span className="text-[8px] text-emerald-455 font-black block uppercase tracking-tight leading-none mt-0.5" style={{ color: '#10b981' }}>
+                                      {item.ruleName}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-white font-bold">
+                                    ${item.finalPrice.toLocaleString('es-CL')}
+                                  </span>
+                                  {item.ruleName && (
+                                    <span className="text-[8px] text-slate-500 block line-through">
+                                      ${item.basePrice.toLocaleString('es-CL')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="h-[1px] bg-white/5 my-1" />
                       <div className="flex justify-between items-center text-sm font-black pt-1">
                         <span className="text-slate-400 uppercase">Monto Total</span>

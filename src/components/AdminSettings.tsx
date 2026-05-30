@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { hotelRpc } from '../lib/supabase';
 import type { Room } from '../types';
-import { Loader2, KeyRound, Palette, Bed, Save, Plus, Trash2, Mail, Building, Phone, MapPin, Image, Sparkles, X } from 'lucide-react';
+import { Loader2, KeyRound, Palette, Bed, Save, Plus, Trash2, Mail, Building, Phone, MapPin, Image, Sparkles, X, Calendar } from 'lucide-react';
 
 const ROOM_PRESETS = {
   Single: [
@@ -71,6 +71,16 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
   const [bannerUrl, setBannerUrl] = useState('');
   const [features, setFeatures] = useState<string[]>([]);
   const [newFeature, setNewFeature] = useState('');
+
+  // Form states for new Pricing Rule
+  const [pricingRules, setPricingRules] = useState<any[]>([]);
+  const [newRuleName, setNewRuleName] = useState('');
+  const [newRuleType, setNewRuleType] = useState<'day_of_week' | 'special_date'>('day_of_week');
+  const [newRuleDayOfWeek, setNewRuleDayOfWeek] = useState<number>(5); // default Viernes
+  const [newRuleSpecialDate, setNewRuleSpecialDate] = useState('');
+  const [newRuleRoomId, setNewRuleRoomId] = useState<string>(''); // vacio = global
+  const [newRuleAdjustmentType, setNewRuleAdjustmentType] = useState<'fixed' | 'multiplier' | 'percentage'>('multiplier');
+  const [newRuleAdjustmentValue, setNewRuleAdjustmentValue] = useState<number>(1.2);
  
   async function loadAdminData() {
     if (!companyId) return;
@@ -113,6 +123,12 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
         setFeatures(Array.isArray(setData.features) ? setData.features : []);
         setLogoUrl(setData.logo_url || '');
       }
+
+      // Fetch pricing rules
+      const { data: rulesData, error: rulesError } = await hotelRpc.getPricingRules(companyId);
+      if (!rulesError && rulesData) {
+        setPricingRules(rulesData as any[]);
+      }
     } catch (err) {
       console.error('Error loading admin settings:', err);
     } finally {
@@ -123,6 +139,66 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
   useEffect(() => {
     loadAdminData();
   }, [companyId]);
+
+  const handleAddRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRuleName.trim()) {
+      alert('Por favor, ingresa un nombre para la regla de tarifa.');
+      return;
+    }
+    if (newRuleType === 'special_date' && !newRuleSpecialDate) {
+      alert('Por favor, selecciona una fecha para la regla.');
+      return;
+    }
+
+    setSaveLoading(true);
+    try {
+      const { error } = await hotelRpc.upsertPricingRule({
+        companyId,
+        roomId: newRuleRoomId || null,
+        name: newRuleName,
+        ruleType: newRuleType,
+        dayOfWeek: newRuleType === 'day_of_week' ? Number(newRuleDayOfWeek) : null,
+        specialDate: newRuleType === 'special_date' ? newRuleSpecialDate : null,
+        adjustmentType: newRuleAdjustmentType,
+        adjustmentValue: Number(newRuleAdjustmentValue)
+      });
+
+      if (error) throw error;
+      
+      alert('Regla de tarifa registrada con éxito.');
+      setNewRuleName('');
+      setNewRuleSpecialDate('');
+      
+      // Reload rules
+      const { data: rulesData, error: rulesError } = await hotelRpc.getPricingRules(companyId);
+      if (!rulesError && rulesData) {
+        setPricingRules(rulesData as any[]);
+      }
+      
+      window.dispatchEvent(new CustomEvent('hotel-settings-updated'));
+    } catch (err: any) {
+      alert(`Error al crear regla de tarifa: ${err.message}`);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleDeleteRule = async (ruleId: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta regla de tarifa?')) return;
+    setSaveLoading(true);
+    try {
+      const { error } = await hotelRpc.deletePricingRule(ruleId);
+      if (error) throw error;
+      setPricingRules(prev => prev.filter(r => r.id !== ruleId));
+      alert('Regla de tarifa eliminada.');
+      window.dispatchEvent(new CustomEvent('hotel-settings-updated'));
+    } catch (err: any) {
+      alert(`Error al eliminar regla de tarifa: ${err.message}`);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   // Save General & Flow Settings
   const handleSaveConfig = async (e: React.FormEvent) => {
@@ -738,6 +814,201 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
                     Sin habitaciones registradas
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Gestión de Tarifas Dinámicas */}
+            <div className="glass-card p-6 border border-white/5 space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-amber-400" />
+                  Tarifas y Precios Dinámicos
+                </h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                  Configura precios para días específicos o días de la semana
+                </p>
+              </div>
+
+              {/* Form to add rule */}
+              <form onSubmit={handleAddRule} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Nombre de la Regla *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Fin de Semana Premium, Año Nuevo"
+                    value={newRuleName}
+                    onChange={(e) => setNewRuleName(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Tipo de Regla *</label>
+                    <select
+                      value={newRuleType}
+                      onChange={(e) => setNewRuleType(e.target.value as any)}
+                      className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs cursor-pointer"
+                    >
+                      <option value="day_of_week">Día de la Semana</option>
+                      <option value="special_date">Fecha Especial</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Habitación (Opcional)</label>
+                    <select
+                      value={newRuleRoomId}
+                      onChange={(e) => setNewRuleRoomId(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs cursor-pointer"
+                    >
+                      <option value="">Todas las Habitaciones</option>
+                      {rooms.map(r => (
+                        <option key={r.id} value={r.id}>#{r.room_number} - {r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {newRuleType === 'day_of_week' ? (
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Seleccionar Día *</label>
+                      <select
+                        value={newRuleDayOfWeek}
+                        onChange={(e) => setNewRuleDayOfWeek(Number(e.target.value))}
+                        className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs cursor-pointer"
+                      >
+                        <option value={0}>Domingo</option>
+                        <option value={1}>Lunes</option>
+                        <option value={2}>Martes</option>
+                        <option value={3}>Miércoles</option>
+                        <option value={4}>Jueves</option>
+                        <option value={5}>Viernes</option>
+                        <option value={6}>Sábado</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Seleccionar Fecha *</label>
+                      <input
+                        type="date"
+                        required
+                        value={newRuleSpecialDate}
+                        onChange={(e) => setNewRuleSpecialDate(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Tipo de Ajuste *</label>
+                    <select
+                      value={newRuleAdjustmentType}
+                      onChange={(e) => {
+                        setNewRuleAdjustmentType(e.target.value as any);
+                        setNewRuleAdjustmentValue(e.target.value === 'multiplier' ? 1.2 : e.target.value === 'percentage' ? 20 : 50000);
+                      }}
+                      className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs cursor-pointer"
+                    >
+                      <option value="multiplier">Multiplicador (x)</option>
+                      <option value="percentage">Porcentaje (%)</option>
+                      <option value="fixed">Precio Fijo ($)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">
+                    {newRuleAdjustmentType === 'multiplier' 
+                      ? 'Valor del Multiplicador (ej: 1.25 para +25%, 0.9 para -10%)'
+                      : newRuleAdjustmentType === 'percentage'
+                        ? 'Porcentaje de Ajuste (ej: 20 para +20%, -15 para -15%)'
+                        : 'Monto de Precio Fijo en CLP (ej: 65000)'} *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={newRuleAdjustmentValue || ''}
+                    onChange={(e) => setNewRuleAdjustmentValue(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={saveLoading}
+                  className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-black rounded-xl font-extrabold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Registrar Regla de Tarifa
+                </button>
+              </form>
+
+              {/* List of pricing rules */}
+              <div className="border-t border-white/5 pt-4 space-y-3">
+                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                  Reglas Activas ({pricingRules.length})
+                </h4>
+
+                <div className="space-y-2 overflow-y-auto max-h-[300px] pr-1 custom-scrollbar">
+                  {pricingRules.map((rule) => {
+                    const ruleRoom = rooms.find(r => r.id === rule.room_id);
+                    const isDow = rule.rule_type === 'day_of_week';
+                    
+                    const dowNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                    const condLabel = isDow 
+                      ? `Cada ${dowNames[rule.day_of_week]}`
+                      : rule.special_date;
+
+                    const adjLabel = rule.adjustment_type === 'fixed'
+                      ? `$${rule.adjustment_value.toLocaleString('es-CL')} Fijo`
+                      : rule.adjustment_type === 'multiplier'
+                        ? `x${rule.adjustment_value} (Multiplicador)`
+                        : `${rule.adjustment_value >= 0 ? '+' : ''}${rule.adjustment_value}% (Porcentaje)`;
+
+                    return (
+                      <div 
+                        key={rule.id}
+                        className="p-3 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center text-xs gap-3"
+                      >
+                        <div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-extrabold text-white">{rule.name}</span>
+                            <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded text-[8px] font-extrabold uppercase tracking-wider">
+                              {isDow ? 'Semanal' : 'Fecha'}
+                            </span>
+                            {ruleRoom && (
+                              <span className="px-1.5 py-0.5 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded text-[8px] font-extrabold uppercase tracking-wider">
+                                #{ruleRoom.room_number}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[9px] text-slate-400 mt-1 font-bold">
+                            Condición: <strong className="text-white">{condLabel}</strong>
+                            <span className="mx-1.5 text-slate-600">|</span>
+                            Ajuste: <strong className="text-orange-400">{adjLabel}</strong>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteRule(rule.id)}
+                          className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-lg transition-colors shrink-0"
+                          title="Eliminar Regla"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {pricingRules.length === 0 && (
+                    <div className="text-center py-6 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                      Sin tarifas dinámicas configuradas. Todas las habitaciones cotizan a valor estándar.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

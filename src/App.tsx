@@ -18,8 +18,7 @@ import {
   ExternalLink,
   Sliders,
   Globe,
-  Building2,
-  Sparkles
+  Building2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -331,12 +330,7 @@ function App() {
               </>
             )}
           </nav>
-        ) : (
-          <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-blue-500/10 rounded-2xl border border-blue-500/20 text-blue-400 font-extrabold uppercase text-[10px] tracking-widest shadow-sm shadow-blue-500/5 animate-pulse-subtle">
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-            <span>Sistema de Reserva Garantizado</span>
-          </div>
-        )}
+        ) : null}
 
         {/* Right controls wrapper with Quick View selector */}
         <div className="flex items-center gap-3">

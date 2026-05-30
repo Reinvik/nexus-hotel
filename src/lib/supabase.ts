@@ -189,4 +189,29 @@ export const hotelRpc = {
       p_features: params.features ?? null,
       p_logo_url: params.logoUrl ?? null,
     }),
+
+  // Dynamic Pricing Rules
+  getPricingRules: (companyId: string) =>
+    supabase.rpc('hotel_get_pricing_rules', { p_company_id: companyId }),
+
+  upsertPricingRule: (params: {
+    id?: string | null; companyId: string; roomId?: string | null; name: string;
+    ruleType: 'day_of_week' | 'special_date'; dayOfWeek?: number | null;
+    specialDate?: string | null; adjustmentType: 'fixed' | 'multiplier' | 'percentage';
+    adjustmentValue: number;
+  }) =>
+    supabase.rpc('hotel_upsert_pricing_rule', {
+      p_id: params.id ?? null,
+      p_company_id: params.companyId,
+      p_room_id: params.roomId ?? null,
+      p_name: params.name,
+      p_rule_type: params.ruleType,
+      p_day_of_week: params.dayOfWeek ?? null,
+      p_special_date: params.specialDate ?? null,
+      p_adjustment_type: params.adjustmentType,
+      p_adjustment_value: params.adjustmentValue,
+    }),
+
+  deletePricingRule: (ruleId: string) =>
+    supabase.rpc('hotel_delete_pricing_rule', { p_rule_id: ruleId }),
 };
