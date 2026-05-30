@@ -233,3 +233,96 @@ body {
   border-bottom-color: #e2e8f0 !important;
 }
 
+/* ─────────────────────────────────────────────
+   OPERTIONAL DASHBOARDS LIGHT-THEME CONTRAST OVERRIDES
+   ───────────────────────────────────────────── */
+main h1, main h2, main h3, main h4 {
+  color: #0f172a !important;
+}
+
+main .text-slate-100, 
+main .text-slate-200, 
+main .text-slate-300, 
+main .text-slate-400 {
+  color: #334155 !important;
+}
+
+main .text-slate-500 {
+  color: #475569 !important;
+}
+
+main .bg-\[\#0e1726\], 
+main .bg-\[\#0e1726\]\/80, 
+main .bg-\[\#10192a\], 
+main .bg-\[\#131c2e\], 
+main .bg-\[\#121c30\] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Guest info inner cards */
+main .bg-\[\#10192a\] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Make white/5 transparent backgrounds stand out as soft light backgrounds */
+main .bg-white\/5 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Make white/10 stand out */
+main .bg-white\/10 {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Borders */
+main .border-white\/5, 
+main .border-white\/10 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Specific text overrides that shouldn't impact buttons */
+main .text-white:not(button *):not(.btn-primary *) {
+  color: #0f172a !important;
+}
+
+/* Text on active buttons or tags should remain readable */
+main button.bg-blue-600 *, 
+main button.bg-emerald-600 *, 
+main button.bg-red-600 *, 
+main button.bg-amber-500 *,
+main button.bg-blue-600, 
+main button.bg-emerald-600, 
+main button.bg-red-600, 
+main button.bg-amber-500 {
+  color: #ffffff !important;
+}
+
+/* Clean up Kanban Column titles and backgrounds */
+main .bg-emerald-500\/5 {
+  background-color: rgba(16, 185, 129, 0.04) !important;
+  border-color: rgba(16, 185, 129, 0.15) !important;
+}
+main .bg-blue-500\/5 {
+  background-color: rgba(59, 130, 246, 0.04) !important;
+  border-color: rgba(59, 130, 246, 0.15) !important;
+}
+main .bg-red-500\/5 {
+  background-color: rgba(239, 68, 68, 0.04) !important;
+  border-color: rgba(239, 68, 68, 0.15) !important;
+}
+main .bg-orange-500\/5 {
+  background-color: rgba(249, 115, 22, 0.04) !important;
+  border-color: rgba(249, 115, 22, 0.15) !important;
+}
+main .bg-slate-500\/5 {
+  background-color: rgba(100, 116, 139, 0.04) !important;
+  border-color: rgba(100, 116, 139, 0.15) !important;
+}
+
