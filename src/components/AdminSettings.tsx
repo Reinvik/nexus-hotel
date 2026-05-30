@@ -62,6 +62,7 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
   const [checkOutTime, setCheckOutTime] = useState('11:00');
   const [themePrimary, setThemePrimary] = useState('#3b82f6');
   const [themeIsDark, setThemeIsDark] = useState(true);
+  const [logoUrl, setLogoUrl] = useState('');
 
   // Form states for landing page customization
   const [heroTitle, setHeroTitle] = useState('');
@@ -110,6 +111,7 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
         setAboutText(setData.about_text || '');
         setBannerUrl(setData.banner_url || '');
         setFeatures(Array.isArray(setData.features) ? setData.features : []);
+        setLogoUrl(setData.logo_url || '');
       }
     } catch (err) {
       console.error('Error loading admin settings:', err);
@@ -152,10 +154,12 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
         aboutText: aboutText || undefined,
         bannerUrl: bannerUrl || undefined,
         features: features.length > 0 ? features : undefined,
+        logoUrl: logoUrl || undefined,
       });
       if (error) throw error;
 
       alert('Configuración guardada correctamente.');
+      window.dispatchEvent(new CustomEvent('hotel-settings-updated'));
       await loadAdminData();
     } catch (err: any) {
       alert(`Error al guardar: ${err.message}`);
@@ -331,7 +335,7 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
                         onChange={(e) => setThemePrimary(e.target.value)}
                         className="w-10 h-10 border-0 bg-transparent rounded-lg cursor-pointer shrink-0"
                       />
-                      <code className="text-xs uppercase font-black text-slate-300">{themePrimary}</code>
+                      <code className="text-xs uppercase font-black text-slate-350">{themePrimary}</code>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-4">
@@ -346,6 +350,22 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
                       Modo Oscuro por defecto
                     </label>
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">URL del Logotipo (Logo Hotel)</label>
+                  <input
+                    type="url"
+                    placeholder="https://ejemplo.com/logo.png"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                  />
+                  {logoUrl && (
+                    <div className="mt-2 p-2 bg-white/5 border border-white/10 rounded-xl inline-block">
+                      <img src={logoUrl} alt="Logo" className="h-10 object-contain" onError={(e) => { (e.target as any).style.display = 'none'; }} />
+                    </div>
+                  )}
                 </div>
               </div>
 

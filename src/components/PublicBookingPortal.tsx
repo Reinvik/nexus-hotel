@@ -84,6 +84,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
   const [bannerUrl, setBannerUrl] = useState('https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1200&q=80');
   const [features, setFeatures] = useState<string[]>(['Wi-Fi de Alta Velocidad', 'Desayuno Buffet Incluido', 'Servicio a la Habitación 24/7', 'Estacionamiento Gratuito']);
   const [themePrimary, setThemePrimary] = useState('#3b82f6');
+  const [logoUrl, setLogoUrl] = useState('');
   
   // Live Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -158,6 +159,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
           setBannerUrl(setData.banner_url || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1200&q=80');
           setFeatures(Array.isArray(setData.features) ? setData.features : ['Wi-Fi de Alta Velocidad', 'Desayuno Buffet Incluido', 'Servicio a la Habitación 24/7', 'Estacionamiento Gratuito']);
           setThemePrimary(setData.theme_primary || '#3b82f6');
+          setLogoUrl(setData.logo_url || '');
         } else {
           setSettings(null);
           // Set defaults
@@ -167,6 +169,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
           setBannerUrl('https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1200&q=80');
           setFeatures(['Wi-Fi de Alta Velocidad', 'Desayuno Buffet Incluido', 'Servicio a la Habitación 24/7', 'Estacionamiento Gratuito']);
           setThemePrimary('#3b82f6');
+          setLogoUrl('');
         }
       } catch (err) {
         console.error('Error loading hotel data:', err);
@@ -288,11 +291,13 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
         heroSubtitle,
         aboutText,
         bannerUrl,
-        features
+        features,
+        logoUrl: logoUrl || undefined
       });
 
       if (error) throw error;
       alert('¡Landing Page actualizada y guardada correctamente en vivo!');
+      window.dispatchEvent(new CustomEvent('hotel-settings-updated'));
       setIsEditorOpen(false);
     } catch (err: any) {
       alert(`Error al guardar cambios: ${err.message}`);
@@ -422,40 +427,46 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
         >
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400" />
           
-          <div className="w-16 h-16 bg-emerald-500/10 rounded-full border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
-            <ShieldCheck className="w-8 h-8 text-emerald-400 animate-bounce" />
-          </div>
+          {logoUrl ? (
+            <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center p-2.5 mx-auto mb-6 shadow-md border border-slate-100 overflow-hidden">
+              <img src={logoUrl} alt="Logo Hotel" className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div className="w-16 h-16 bg-emerald-500/10 rounded-full border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
+              <ShieldCheck className="w-8 h-8 text-emerald-500 animate-bounce" />
+            </div>
+          )}
 
-          <h2 className="text-3xl font-black text-white tracking-tight mb-2">¡Reserva Confirmada!</h2>
-          <p className="text-sm text-slate-400 uppercase tracking-widest font-black mb-8">Pago procesado vía Flow.cl</p>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">¡Reserva Confirmada!</h2>
+          <p className="text-sm text-slate-500 uppercase tracking-widest font-black mb-8">Pago procesado vía Flow.cl</p>
 
-          <div className="bg-[#121c30] rounded-2xl p-6 border border-white/5 text-left space-y-4 mb-8">
+          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60 text-left space-y-4 mb-8">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-xs text-slate-500 uppercase font-black block">Huésped</span>
-                <span className="text-white font-bold">{guestName}</span>
+                <span className="text-slate-800 font-bold">{guestName}</span>
               </div>
               <div>
                 <span className="text-xs text-slate-500 uppercase font-black block">Habitación</span>
-                <span className="text-white font-bold">{selectedRoom.room_number} — {selectedRoom.name}</span>
+                <span className="text-slate-800 font-bold">{selectedRoom.room_number} — {selectedRoom.name}</span>
               </div>
               <div>
                 <span className="text-xs text-slate-500 uppercase font-black block">Check-in</span>
-                <span className="text-white font-bold">
+                <span className="text-slate-800 font-bold">
                   {format(parseISO(checkIn), "dd 'de' MMMM, yyyy", { locale: es })}
                 </span>
               </div>
               <div>
                 <span className="text-xs text-slate-500 uppercase font-black block">Check-out</span>
-                <span className="text-white font-bold">
+                <span className="text-slate-800 font-bold">
                   {format(parseISO(checkOut), "dd 'de' MMMM, yyyy", { locale: es })}
                 </span>
               </div>
             </div>
-            <div className="h-[1px] bg-white/10 my-2" />
+            <div className="h-[1px] bg-slate-200 my-2" />
             <div className="flex justify-between items-center text-sm font-black">
-              <span className="text-slate-400 uppercase">Monto Total Pagado</span>
-              <span className="text-emerald-400 text-lg">${paymentAmount.toLocaleString('es-CL')} CLP</span>
+              <span className="text-slate-500 uppercase">Monto Total Pagado</span>
+              <span className="text-emerald-600 text-lg">${paymentAmount.toLocaleString('es-CL')} CLP</span>
             </div>
           </div>
 
@@ -625,7 +636,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
               </div>
 
               {/* Booking Controls & Search Dates */}
-              <div className="bg-[#0e1726]/60 backdrop-blur p-6 rounded-3xl border border-white/5 space-y-6">
+              <div className="glass-card p-6 border-white/5 space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 pb-4">
                   <div className="text-left">
                     <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-1.5">
@@ -659,7 +670,6 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                       value={checkIn}
                       min={format(new Date(), 'yyyy-MM-dd')}
                       onChange={handleCheckInChange}
-                      style={{ colorScheme: 'dark' }}
                       className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
                     />
                   </div>
@@ -671,7 +681,6 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                       value={checkOut}
                       min={format(addDays(parseISO(checkIn), 1), 'yyyy-MM-dd')}
                       onChange={(e) => setCheckOut(e.target.value)}
-                      style={{ colorScheme: 'dark' }}
                       className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
                     />
                   </div>
@@ -800,14 +809,20 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
               <div id="booking-form-section" className="glass-card p-6 border border-white/5 space-y-6 relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: 'var(--theme-primary)' }} />
                 
-                <div className="border-b border-white/5 pb-4 text-left">
-                  <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                <div className="border-b border-slate-100 pb-4 text-left">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
                     Detalles de la Reserva
                   </h2>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
                     {activeCompany?.name || 'Hotel'}
                   </p>
                 </div>
+
+                {logoUrl && (
+                  <div className="w-full flex justify-center py-6 bg-slate-50 rounded-2xl border border-slate-200/60 shadow-sm">
+                    <img src={logoUrl} alt="Logo" className="h-16 max-w-[80%] object-contain" />
+                  </div>
+                )}
 
                 {selectedRoom ? (
                   <form onSubmit={handleOpenPayment} className="space-y-4">
@@ -1016,7 +1031,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                 {/* 1. Tab Cover/Portada */}
                 {activeEditorTab === 'cover' && (
                   <div className="space-y-4">
-                    <div className="space-y-1">
+                     <div className="space-y-1">
                       <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Título de Bienvenida (Hero Title)</label>
                       <input
                         type="text"
@@ -1024,6 +1039,22 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                         onChange={(e) => setHeroTitle(e.target.value)}
                         className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
                       />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">URL del Logotipo (Logo Hotel)</label>
+                      <input
+                        type="text"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="https://ejemplo.com/logo.png"
+                        className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                      />
+                      {logoUrl && (
+                        <div className="mt-2 p-2 bg-[#0e1726] rounded-xl inline-block border border-white/5">
+                          <img src={logoUrl} alt="Vista previa logo" className="h-10 object-contain" onError={(e) => { (e.target as any).style.display = 'none'; }} />
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-1">

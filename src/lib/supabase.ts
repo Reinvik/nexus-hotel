@@ -174,6 +174,7 @@ export const hotelRpc = {
     heroTitle?: string; heroSubtitle?: string;
     aboutText?: string; bannerUrl?: string;
     features?: string[];
+    logoUrl?: string;
   }) =>
     supabase.rpc('hotel_upsert_settings', {
       p_company_id: params.companyId,
@@ -186,5 +187,6 @@ export const hotelRpc = {
       p_about_text: params.aboutText ?? null,
       p_banner_url: params.bannerUrl ?? null,
       p_features: params.features ?? null,
+      p_logo_url: params.logoUrl ?? null,
     }),
 };

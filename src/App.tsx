@@ -187,21 +187,53 @@ function App() {
  
   const companyId = selectedCompanyId || profile?.company_id || '20a9a13f-e8b2-4d2d-a16b-d36c57f7eb9b'; // Fallback to selected hotel or profile or demo hotel ID
 
+  const [logoUrl, setLogoUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (!companyId) return;
+    
+    const fetchLogo = async () => {
+      try {
+        const { data, error } = await hotelRpc.getSettings(companyId);
+        if (!error && data) {
+          const setData = Array.isArray(data) ? data[0] : data;
+          setLogoUrl(setData?.logo_url || '');
+        }
+      } catch (err) {
+        console.error('Error fetching logo:', err);
+      }
+    };
+
+    fetchLogo();
+
+    // Listen to settings update events to refetch logo in live editing
+    window.addEventListener('hotel-settings-updated', fetchLogo);
+    return () => {
+      window.removeEventListener('hotel-settings-updated', fetchLogo);
+    };
+  }, [companyId]);
+
   return (
-    <div className="min-h-screen bg-[#090d16] text-[#f8fafc] flex flex-col font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col font-sans relative overflow-hidden transition-colors duration-300">
       {/* Background Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
 
       {/* Main Header / Top Navbar */}
-      <header className="sticky top-0 z-50 bg-[#0d1424]/85 backdrop-blur-md border-b border-white/5 px-6 py-4 flex items-center justify-between shadow-lg">
+      <header className="sticky top-0 z-50 bg-[#0d1424]/95 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Bed className="w-5 h-5 text-white" />
-          </div>
+          {logoUrl ? (
+            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center p-1 shadow-lg shadow-blue-500/15 border border-white/10 overflow-hidden">
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Bed className="w-5 h-5 text-white" />
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base font-black tracking-tight text-white uppercase">Nexus Hotel</span>
+              <span className="text-base font-black tracking-tight text-white uppercase font-sans">Nexus Hotel</span>
               <span className="text-[8px] bg-emerald-500/20 text-emerald-400 font-extrabold uppercase px-1.5 py-0.5 rounded tracking-widest border border-emerald-500/10">
                 SmartLean
               </span>
