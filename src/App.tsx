@@ -13,7 +13,6 @@ import {
   Lock, 
   Menu, 
   X, 
-  LogIn, 
   Info,
   Sliders,
   Globe,
@@ -253,16 +252,10 @@ function App() {
         {activeView === 'portal' ? (
           <nav className="hidden lg:flex items-center gap-8">
             <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' })}
               className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
             >
-              Inicio
-            </button>
-            <button
-              onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
-              className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
-            >
-              Habitaciones
+              Nuestra Identidad
             </button>
             <button
               onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -271,10 +264,10 @@ function App() {
               Servicios
             </button>
             <button
-              onClick={() => document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
               className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
             >
-              Sobre Nosotros
+              Habitaciones
             </button>
             <button
               onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })}
@@ -449,15 +442,7 @@ function App() {
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={() => setActiveView('login')}
-                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/10 active:scale-[0.98] border-none outline-none cursor-pointer"
-              >
-                <LogIn className="w-4 h-4" />
-                Acceso Staff
-              </button>
-            )}
+            ) : null}
           </div>
 
           {/* Subtle Staff login for non-logged in users when viewing portal */}
@@ -495,16 +480,10 @@ function App() {
                 {activeView === 'portal' ? (
                   <>
                     <button
-                      onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      onClick={() => { document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
                       className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
                     >
-                      Inicio
-                    </button>
-                    <button
-                      onClick={() => { document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
-                      className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
-                    >
-                      Habitaciones
+                      Nuestra Identidad
                     </button>
                     <button
                       onClick={() => { document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
@@ -513,10 +492,10 @@ function App() {
                       Servicios
                     </button>
                     <button
-                      onClick={() => { document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      onClick={() => { document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
                       className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
                     >
-                      Sobre Nosotros
+                      Habitaciones
                     </button>
                     <button
                       onClick={() => { document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
@@ -616,10 +595,10 @@ function App() {
                 ) : (
                   <button
                     onClick={() => { setActiveView('login'); setMobileMenuOpen(false); }}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-transparent text-slate-500 hover:text-white transition-all text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 border border-white/10 rounded-xl cursor-pointer"
                   >
-                    <LogIn className="w-4 h-4" />
-                    Acceso Staff
+                    <Lock className="w-3.5 h-3.5" />
+                    Staff Access
                   </button>
                 )}
               </div>
@@ -765,7 +744,7 @@ function App() {
       </main>
 
       {/* Premium Elegant Footer */}
-      <footer id="contacto" className="bg-black text-slate-400 border-t border-white/5 py-16 px-6 md:px-12 mt-16 text-left">
+      <footer id="contacto" className="bg-black text-slate-400 border-t border-white/5 py-16 px-6 md:px-12 mt-16 text-left scroll-mt-24">
         <div className="max-w-6xl mx-auto space-y-10">
           
           {/* Top Links Row */}

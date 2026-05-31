@@ -655,8 +655,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
               <div className="pt-2">
                 <button 
                   onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white flex items-center gap-2 transition-all hover:translate-y-[-2px] shadow-lg shadow-black/30"
-                  style={{ backgroundColor: 'var(--theme-primary)' }}
+                  className="px-6 py-3 rounded-none text-[10px] font-black uppercase tracking-[0.2em] text-white flex items-center gap-2 transition-all hover:translate-y-[-2px] shadow-lg shadow-black/30 border-none outline-none cursor-pointer"
+                  style={{ backgroundColor: '#8b5cf6' }}
                 >
                   Reservar Habitación
                   <ArrowRight className="w-4 h-4" />
@@ -666,13 +666,13 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
           </div>
 
           {/* Core Content Booking Section */}
-          <div id="booking-portal-content" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div id="booking-portal-content" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24">
             
             {/* Left panel: Filters, About, Amenities, and Room Grid */}
             <div className="lg:col-span-8 space-y-12">
               
               {/* Hotel History & Presentation Section */}
-              <div id="about-section" className="relative group glass-card p-6 md:p-8 border border-white/5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div id="about-section" className="relative group glass-card p-6 md:p-8 border border-white/5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center scroll-mt-24">
                 {isAdminForThisCompany && (
                   <button
                     onClick={() => {
@@ -731,7 +731,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
               </div>
 
               {/* Amenities Grid ("Servicios Exclusivos") */}
-              <div id="services-section" className="relative group glass-card p-6 md:p-8 border border-white/5 space-y-6 text-left">
+              <div id="services-section" className="relative group glass-card p-6 md:p-8 border border-white/5 space-y-6 text-left scroll-mt-24">
                 {isAdminForThisCompany && (
                   <button
                     onClick={() => {
@@ -926,14 +926,14 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                               {available && (
                                 <button
                                   onClick={() => handleStartBooking(room)}
-                                  className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
+                                  className={`px-5 py-2.5 rounded-none text-[10px] font-extrabold uppercase tracking-[0.2em] transition-all cursor-pointer border-none outline-none ${
                                     isSelected 
                                       ? 'text-white shadow-lg' 
-                                      : 'bg-white/5 text-slate-300 hover:bg-slate-800 border border-white/5'
+                                      : 'bg-white/5 text-slate-350 hover:bg-slate-800'
                                   }`}
                                   style={{
-                                    backgroundColor: isSelected ? 'var(--theme-primary)' : '',
-                                    boxShadow: isSelected ? `0 4px 12px ${themePrimary}30` : ''
+                                    backgroundColor: isSelected ? '#8b5cf6' : '',
+                                    boxShadow: isSelected ? '0 4px 12px rgba(139, 92, 246, 0.3)' : ''
                                   }}
                                 >
                                   {isSelected ? 'Seleccionada' : 'Reservar'}
@@ -1130,10 +1130,10 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                     <button
                       type="submit"
                       disabled={bookingLoading}
-                      className="w-full py-4 text-white rounded-xl font-extrabold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg"
+                      className="w-full py-4 text-white rounded-none font-black uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg cursor-pointer border-none outline-none"
                       style={{ 
-                        backgroundColor: 'var(--theme-primary)', 
-                        boxShadow: `0 4px 14px ${themePrimary}30` 
+                        backgroundColor: '#8b5cf6', 
+                        boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)' 
                       }}
                     >
                       {bookingLoading ? (
