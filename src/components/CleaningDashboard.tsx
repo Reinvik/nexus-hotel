@@ -119,7 +119,7 @@ export function CleaningDashboard({ companyId }: CleaningDashboardProps) {
   const completedTasks = tasks.filter(t => t.status === 'completed');
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto staff-dashboard">
       {/* Header controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0e1726] p-6 rounded-3xl border border-white/5">
         <div>

@@ -111,7 +111,7 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 staff-dashboard">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">

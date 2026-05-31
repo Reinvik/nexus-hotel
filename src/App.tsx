@@ -15,10 +15,12 @@ import {
   X, 
   LogIn, 
   Info,
-  ExternalLink,
   Sliders,
   Globe,
-  Building2
+  Building2,
+  MapPin,
+  Phone,
+  Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -226,37 +228,71 @@ function App() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
 
       {/* Main Header / Top Navbar */}
-      <header className="sticky top-0 z-50 bg-[#0d1424]/95 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-lg">
+      <header className="sticky top-0 z-50 bg-black border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
           {logoUrl ? (
-            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center p-1 shadow-lg shadow-blue-500/15 border border-white/10 overflow-hidden">
+            <div className="w-10 h-10 shrink-0 flex items-center justify-center overflow-hidden">
               <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-black text-sm uppercase tracking-wider">
-              {(currentCompany?.name || 'Nexus Hotel').substring(0, 2)}
+            <div className="w-9 h-9 rounded-none border border-white/30 flex items-center justify-center text-white font-light text-base tracking-widest font-mono shrink-0 select-none">
+              {(currentCompany?.name || 'NH').substring(0, 2).toUpperCase()}
             </div>
           )}
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base font-black tracking-tight text-white uppercase font-sans">{currentCompany?.name || 'Nexus Hotel'}</span>
+              <span className="text-sm font-light tracking-[0.25em] text-white uppercase font-sans leading-none">{currentCompany?.name || 'Nexus Hotel'}</span>
             </div>
-            <p className="text-[9px] text-slate-500 font-extrabold uppercase tracking-widest mt-0.5">
-              {profile?.company_id ? 'Consola Operativa' : 'Portal de Reserva'}
+            <p className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.3em] mt-1.5 leading-none">
+              {profile?.company_id ? 'Consola Operativa' : 'Hotel Boutique'}
             </p>
           </div>
         </div>
 
         {/* Desktop Navigation Tabs */}
-        {session ? (
-          <nav className="hidden lg:flex items-center gap-1 bg-[#121b2d] p-1.5 rounded-2xl border border-white/5">
+        {activeView === 'portal' ? (
+          <nav className="hidden lg:flex items-center gap-8">
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
+            >
+              Inicio
+            </button>
+            <button
+              onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
+            >
+              Habitaciones
+            </button>
+            <button
+              onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
+            >
+              Servicios
+            </button>
+            <button
+              onClick={() => document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
+            >
+              Sobre Nosotros
+            </button>
+            <button
+              onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
+            >
+              Contacto
+            </button>
+          </nav>
+        ) : session ? (
+          <nav className="hidden lg:flex items-center gap-3">
             <button
               onClick={() => setActiveView('portal')}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                activeView === 'portal'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+              className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
+                (activeView as string) === 'portal'
+                  ? 'text-white'
+                  : 'border-transparent text-slate-450 hover:text-white'
               }`}
+              style={{ borderColor: (activeView as string) === 'portal' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
             >
               Portal Público
             </button>
@@ -267,21 +303,23 @@ function App() {
                   <>
                     <button
                       onClick={() => setActiveView('kanban')}
-                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                      className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                         activeView === 'kanban'
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'text-slate-400 hover:text-white'
+                          ? 'text-white'
+                          : 'border-transparent text-slate-455 hover:text-white'
                       }`}
+                      style={{ borderColor: activeView === 'kanban' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
                     >
                       Gemba Kanban
                     </button>
                     <button
                       onClick={() => setActiveView('calendar')}
-                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                      className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                         activeView === 'calendar'
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'text-slate-400 hover:text-white'
+                          ? 'text-white'
+                          : 'border-transparent text-slate-455 hover:text-white'
                       }`}
+                      style={{ borderColor: activeView === 'calendar' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
                     >
                       Calendario
                     </button>
@@ -291,11 +329,12 @@ function App() {
                 {(profile.role === 'admin' || profile.role === 'cleaner') && (
                   <button
                     onClick={() => setActiveView('cleaning')}
-                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                    className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                       activeView === 'cleaning'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'text-white'
+                        : 'border-transparent text-slate-455 hover:text-white'
                     }`}
+                    style={{ borderColor: activeView === 'cleaning' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
                   >
                     Limpieza
                   </button>
@@ -304,11 +343,12 @@ function App() {
                 {profile.role === 'admin' && (
                   <button
                     onClick={() => setActiveView('admin')}
-                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                    className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                       activeView === 'admin'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'text-white'
+                        : 'border-transparent text-slate-455 hover:text-white'
                     }`}
+                    style={{ borderColor: activeView === 'admin' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
                   >
                     Ajustes
                   </button>
@@ -317,11 +357,12 @@ function App() {
                 {profile.email === NEXUS_OWNER_EMAIL && (
                   <button
                     onClick={() => setActiveView('nexusowner')}
-                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                    className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 flex items-center gap-1.5 bg-transparent border-none outline-none cursor-pointer ${
                       activeView === 'nexusowner'
-                        ? 'bg-amber-500 text-black shadow-md'
-                        : 'text-amber-400/70 hover:text-amber-400'
+                        ? 'text-white'
+                        : 'border-transparent text-amber-500/70 hover:text-amber-400'
                     }`}
+                    style={{ borderColor: activeView === 'nexusowner' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
                   >
                     <Globe className="w-3.5 h-3.5" />
                     NexusOwner
@@ -333,7 +374,7 @@ function App() {
         ) : null}
 
         {/* Right controls wrapper with Quick View selector */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {/* Hotel Selector (visible to admin or Ariel Mellag) */}
           {(profile?.role === 'admin' || profile?.email === NEXUS_OWNER_EMAIL) && companies.length > 0 && (
             <div className="flex items-center gap-1.5 bg-[#121b2d] px-2.5 py-1.5 rounded-xl border border-white/5 shadow-sm">
@@ -377,6 +418,16 @@ function App() {
 
           {/* Desktop Right Side Controls */}
           <div className="hidden lg:flex items-center gap-4">
+            {activeView === 'portal' && (
+              <button
+                onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-6 py-2.5 text-white rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 cursor-pointer shadow-lg shadow-violet-500/20 border-none outline-none"
+                style={{ backgroundColor: '#8b5cf6' }} // Vibrant violet from Image 1
+              >
+                Reservar
+              </button>
+            )}
+
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-slate-800 animate-pulse" />
             ) : session && profile ? (
@@ -392,7 +443,7 @@ function App() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-xl transition-all"
+                  className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-xl transition-all bg-transparent border-none outline-none cursor-pointer"
                   title="Cerrar Sesión"
                 >
                   <LogOut className="w-4 h-4" />
@@ -401,13 +452,24 @@ function App() {
             ) : (
               <button
                 onClick={() => setActiveView('login')}
-                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/10 active:scale-[0.98]"
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/10 active:scale-[0.98] border-none outline-none cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 Acceso Staff
               </button>
             )}
           </div>
+
+          {/* Subtle Staff login for non-logged in users when viewing portal */}
+          {!session && activeView === 'portal' && (
+            <button
+              onClick={() => setActiveView('login')}
+              className="hidden lg:flex px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-all items-center gap-1.5 bg-transparent border-none outline-none cursor-pointer"
+            >
+              <Lock className="w-3 h-3" />
+              Staff
+            </button>
+          )}
 
           {/* Mobile menu trigger */}
           <button
@@ -430,58 +492,104 @@ function App() {
           >
             <div className="p-6 space-y-4">
               <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => { setActiveView('portal'); setMobileMenuOpen(false); }}
-                  className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
-                    activeView === 'portal' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
-                  }`}
-                >
-                  Portal Público
-                </button>
-
-                {session && profile && (
+                {activeView === 'portal' ? (
                   <>
-                    {(profile.role === 'admin' || profile.role === 'receptionist') && (
+                    <button
+                      onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      Inicio
+                    </button>
+                    <button
+                      onClick={() => { document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      Habitaciones
+                    </button>
+                    <button
+                      onClick={() => { document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      Servicios
+                    </button>
+                    <button
+                      onClick={() => { document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      Sobre Nosotros
+                    </button>
+                    <button
+                      onClick={() => { document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      Contacto
+                    </button>
+                    
+                    {session && (
+                      <button
+                        onClick={() => { setActiveView('kanban'); setMobileMenuOpen(false); }}
+                        className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-blue-400 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none border-t border-white/5 mt-2"
+                      >
+                        Consola Operativa
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => { setActiveView('portal'); setMobileMenuOpen(false); }}
+                      className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
+                        (activeView as string) === 'portal' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
+                      }`}
+                    >
+                      Portal Público
+                    </button>
+
+                    {session && profile && (
                       <>
-                        <button
-                          onClick={() => { setActiveView('kanban'); setMobileMenuOpen(false); }}
-                          className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
-                            activeView === 'kanban' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
-                          }`}
-                        >
-                          Gemba Kanban
-                        </button>
-                        <button
-                          onClick={() => { setActiveView('calendar'); setMobileMenuOpen(false); }}
-                          className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
-                            activeView === 'calendar' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
-                          }`}
-                        >
-                          Calendario
-                        </button>
+                        {(profile.role === 'admin' || profile.role === 'receptionist') && (
+                          <>
+                            <button
+                              onClick={() => { setActiveView('kanban'); setMobileMenuOpen(false); }}
+                              className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
+                                activeView === 'kanban' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
+                              }`}
+                            >
+                              Gemba Kanban
+                            </button>
+                            <button
+                              onClick={() => { setActiveView('calendar'); setMobileMenuOpen(false); }}
+                              className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
+                                activeView === 'calendar' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
+                              }`}
+                            >
+                              Calendario
+                            </button>
+                          </>
+                        )}
+
+                        {(profile.role === 'admin' || profile.role === 'cleaner') && (
+                          <button
+                            onClick={() => { setActiveView('cleaning'); setMobileMenuOpen(false); }}
+                            className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
+                              activeView === 'cleaning' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
+                            }`}
+                          >
+                            Limpieza
+                          </button>
+                        )}
+
+                        {profile.role === 'admin' && (
+                          <button
+                            onClick={() => { setActiveView('admin'); setMobileMenuOpen(false); }}
+                            className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
+                              activeView === 'admin' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
+                            }`}
+                          >
+                            Ajustes
+                          </button>
+                        )}
                       </>
-                    )}
-
-                    {(profile.role === 'admin' || profile.role === 'cleaner') && (
-                      <button
-                        onClick={() => { setActiveView('cleaning'); setMobileMenuOpen(false); }}
-                        className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
-                          activeView === 'cleaning' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
-                        }`}
-                      >
-                        Limpieza
-                      </button>
-                    )}
-
-                    {profile.role === 'admin' && (
-                      <button
-                        onClick={() => { setActiveView('admin'); setMobileMenuOpen(false); }}
-                        className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
-                          activeView === 'admin' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
-                        }`}
-                      >
-                        Ajustes
-                      </button>
                     )}
                   </>
                 )}
@@ -521,7 +629,7 @@ function App() {
       </AnimatePresence>
 
       {/* Main Container */}
-      <main className="flex-1 px-4 md:px-8 py-8 relative z-10">
+      <main className="flex-1 px-4 md:px-8 pt-24 pb-16 relative z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}
@@ -656,14 +764,90 @@ function App() {
         </AnimatePresence>
       </main>
 
-      {/* Lean Footer */}
-      <footer className="py-6 px-8 border-t border-white/5 text-center text-[10px] text-slate-500 font-extrabold uppercase tracking-wider flex flex-col sm:flex-row justify-between items-center gap-4 bg-[#0a0f19] mt-12">
-        <div className="flex items-center gap-2 mx-auto sm:mx-0">
-          <span>© 2026 NEXUS HOTEL — FILOSOFÍA SMARTLEAN</span>
-          <span className="h-3.5 w-[1px] bg-white/10" />
-          <a href="https://smartlean.cl" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-0.5">
-            smartlean.cl <ExternalLink className="w-2.5 h-2.5" />
-          </a>
+      {/* Premium Elegant Footer */}
+      <footer id="contacto" className="bg-black text-slate-400 border-t border-white/5 py-16 px-6 md:px-12 mt-16 text-left">
+        <div className="max-w-6xl mx-auto space-y-10">
+          
+          {/* Top Links Row */}
+          <div className="flex flex-wrap gap-x-8 gap-y-3 border-b border-white/5 pb-6 text-[9px] font-extrabold uppercase tracking-[0.3em] text-white">
+            <a href="#contacto" className="hover:text-violet-400 transition-colors duration-300">Contacto & Ayuda</a>
+            <a href="#terminos" className="hover:text-violet-400 transition-colors duration-300">Términos & Condiciones</a>
+            <a href="#privacidad" className="hover:text-violet-400 transition-colors duration-300">Política de Privacidad</a>
+          </div>
+
+          {/* Core Info Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            {/* Left: Dynamic Company Details */}
+            <div className="space-y-4 text-[11px] font-medium tracking-wide">
+              <span className="text-xs font-bold tracking-[0.25em] text-white uppercase block">
+                {currentCompany?.name || 'Nexus Hotel'}
+              </span>
+              <div className="space-y-2.5 text-slate-400">
+                <p className="flex items-center gap-2.5">
+                  <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <span>
+                    {currentCompany?.address || 'Av. Providencia 1234'}
+                    {currentCompany?.city && `, ${currentCompany?.city}`}
+                  </span>
+                </p>
+                {currentCompany?.phone && (
+                  <p className="flex items-center gap-2.5">
+                    <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span>{currentCompany.phone}</span>
+                  </p>
+                )}
+                {currentCompany?.email && (
+                  <p className="flex items-center gap-2.5">
+                    <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <a href={`mailto:${currentCompany.email}`} className="hover:text-white transition-colors underline decoration-white/10">
+                      {currentCompany.email}
+                    </a>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Social & Copyright */}
+            <div className="flex flex-col md:items-end justify-between h-full gap-6">
+              {/* Social Icons */}
+              <div className="flex items-center gap-5 text-white">
+                <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-white hover:text-violet-400 transition-colors duration-300" title="Facebook">
+                  <svg className="w-4 h-4 fill-current hover:scale-110 transition-all duration-300" viewBox="0 0 24 24">
+                    <path d="M9 8H7v3h2v9h4v-9h3.6l.4-3H13V6c0-.5.5-1 1-1h2V1h-3c-3 0-5 2-5 5v2z" />
+                  </svg>
+                </a>
+                <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-white hover:text-violet-400 transition-colors duration-300" title="Instagram">
+                  <svg className="w-4 h-4 hover:scale-110 transition-all duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                  </svg>
+                </a>
+                <a href="https://wa.me" target="_blank" rel="noreferrer" className="text-white hover:text-violet-400 transition-colors duration-300" title="WhatsApp">
+                  <svg className="w-4 h-4 fill-current hover:text-violet-455 hover:scale-115 transition-all duration-300" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.864.002-2.637-1.03-5.114-2.905-6.99C16.658 1.875 14.183 1.84 11.55 1.84c-5.442 0-9.869 4.426-9.873 9.87.002 1.902.506 3.758 1.47 5.416L2.146 20.91l3.96-.948l.54.322z"/>
+                  </svg>
+                </a>
+              </div>
+
+              {/* Copyright & Designed By */}
+              <div className="text-[9px] font-extrabold uppercase tracking-widest text-slate-500 text-left md:text-right space-y-2">
+                <p>© {new Date().getFullYear()} {currentCompany?.name || 'Nexus Hotel'} — FILOSOFÍA SMARTLEAN</p>
+                <div className="flex flex-wrap md:justify-end gap-x-4 gap-y-1">
+                  <p>
+                    <span>DESIGNED BY </span>
+                    <a href="https://smartlean.cl" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition-colors duration-300">
+                      smartlean.cl
+                    </a>
+                  </p>
+                  <span className="text-slate-700 hidden md:inline">|</span>
+                  <a href="#cookies" className="text-slate-500 hover:text-white transition-colors duration-300">
+                    Manage Cookies
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

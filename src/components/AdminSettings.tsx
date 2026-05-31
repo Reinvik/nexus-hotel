@@ -297,7 +297,7 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 staff-dashboard">
       {loading ? (
         <div className="col-span-12 flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />

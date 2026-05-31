@@ -24,8 +24,8 @@
 }
 
 :root {
-  --primary: #3b82f6; /* Blue 500 */
-  --primary-shadow: rgba(59, 130, 246, 0.2);
+  --primary: #8b5cf6; /* Violet 500 */
+  --primary-shadow: rgba(139, 92, 246, 0.2);
   --primary-foreground: #ffffff;
   --secondary: #1e293b; /* Slate 800 */
   --secondary-foreground: #ffffff;
@@ -37,8 +37,8 @@
   --accent-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #3b82f6;
-  --radius: 1rem;
+  --ring: #8b5cf6;
+  --radius: 0.5rem;
 }
 
 /* Dark mode by default - COMENTADO para activar diseño claro */
@@ -192,16 +192,16 @@ body {
   color: #0f172a !important;
 }
 
-.glass-card h1,
-.glass-card h2,
-.glass-card h3,
-.glass-card h4,
-.glass-card .text-white {
+.glass-card h1:not(.keep-dark *),
+.glass-card h2:not(.keep-dark *),
+.glass-card h3:not(.keep-dark *),
+.glass-card h4:not(.keep-dark *),
+.glass-card .text-white:not(.keep-dark *) {
   color: #0f172a !important;
 }
 
-.glass-card .text-slate-300,
-.glass-card .text-slate-400 {
+.glass-card .text-slate-300:not(.keep-dark *),
+.glass-card .text-slate-400:not(.keep-dark *) {
   color: #475569 !important;
 }
 
@@ -236,26 +236,26 @@ body {
 /* ─────────────────────────────────────────────
    OPERTIONAL DASHBOARDS LIGHT-THEME CONTRAST OVERRIDES
    ───────────────────────────────────────────── */
-main h1, main h2, main h3, main h4 {
+main h1:not(.keep-dark *), main h2:not(.keep-dark *), main h3:not(.keep-dark *), main h4:not(.keep-dark *) {
   color: #0f172a !important;
 }
 
-main .text-slate-100, 
-main .text-slate-200, 
-main .text-slate-300, 
-main .text-slate-400 {
+main .text-slate-100:not(.keep-dark *), 
+main .text-slate-200:not(.keep-dark *), 
+main .text-slate-300:not(.keep-dark *), 
+main .text-slate-400:not(.keep-dark *) {
   color: #334155 !important;
 }
 
-main .text-slate-500 {
+main .text-slate-500:not(.keep-dark *) {
   color: #475569 !important;
 }
 
-main .bg-\[\#0e1726\], 
-main .bg-\[\#0e1726\]\/80, 
-main .bg-\[\#10192a\], 
-main .bg-\[\#131c2e\], 
-main .bg-\[\#121c30\] {
+main .bg-\[\#0e1726\]:not(.keep-dark *), 
+main .bg-\[\#0e1726\]\/80:not(.keep-dark *), 
+main .bg-\[\#10192a\]:not(.keep-dark *), 
+main .bg-\[\#131c2e\]:not(.keep-dark *), 
+main .bg-\[\#121c30\]:not(.keep-dark *) {
   background-color: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
@@ -263,32 +263,32 @@ main .bg-\[\#121c30\] {
 }
 
 /* Guest info inner cards */
-main .bg-\[\#10192a\] {
+main .bg-\[\#10192a\]:not(.keep-dark *) {
   background-color: #f8fafc !important;
   border-color: #e2e8f0 !important;
 }
 
 /* Make white/5 transparent backgrounds stand out as soft light backgrounds */
-main .bg-white\/5 {
+main .bg-white\/5:not(.keep-dark *) {
   background-color: #f1f5f9 !important;
   border-color: #e2e8f0 !important;
   color: #0f172a !important;
 }
 
 /* Make white/10 stand out */
-main .bg-white\/10 {
+main .bg-white\/10:not(.keep-dark *) {
   background-color: #e2e8f0 !important;
   border-color: #cbd5e1 !important;
 }
 
 /* Borders */
-main .border-white\/5, 
-main .border-white\/10 {
+main .border-white\/5:not(.keep-dark *), 
+main .border-white\/10:not(.keep-dark *) {
   border-color: #e2e8f0 !important;
 }
 
 /* Specific text overrides that shouldn't impact buttons */
-main .text-white:not(button *):not(.btn-primary *) {
+main .text-white:not(button *):not(.btn-primary *):not(.keep-dark *):not(.keep-dark) {
   color: #0f172a !important;
 }
 

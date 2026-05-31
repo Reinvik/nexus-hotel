@@ -108,7 +108,7 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 staff-dashboard">
       {/* Header controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0e1726] p-6 rounded-3xl border border-white/5">
         <div>

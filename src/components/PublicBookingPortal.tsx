@@ -83,7 +83,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
   const [aboutText, setAboutText] = useState('En nuestro hotel nos esforzamos por ofrecerte la máxima comodidad, elegancia y tranquilidad. Cada habitación está diseñada para brindarte una experiencia inolvidable.');
   const [bannerUrl, setBannerUrl] = useState('https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1200&q=80');
   const [features, setFeatures] = useState<string[]>(['Wi-Fi de Alta Velocidad', 'Desayuno Buffet Incluido', 'Servicio a la Habitación 24/7', 'Estacionamiento Gratuito']);
-  const [themePrimary, setThemePrimary] = useState('#3b82f6');
+  const [themePrimary, setThemePrimary] = useState('#8b5cf6');
   const [logoUrl, setLogoUrl] = useState('');
   const [pricingRules, setPricingRules] = useState<any[]>([]);
   
@@ -618,7 +618,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
       {!bookingSuccess && (
         <div className="space-y-16">
           {/* Dynamic Hero Section with Parallax Background & Custom Title */}
-          <div className="relative h-[480px] rounded-3xl overflow-hidden flex items-end p-8 md:p-12 border border-white/5 shadow-2xl group">
+          <div className="relative h-[480px] rounded-3xl overflow-hidden flex items-end p-8 md:p-12 border border-white/5 shadow-2xl group keep-dark">
             <div 
               className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
               style={{ backgroundImage: `url(${bannerUrl})` }}
@@ -672,7 +672,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
             <div className="lg:col-span-8 space-y-12">
               
               {/* Hotel History & Presentation Section */}
-              <div className="relative group glass-card p-6 md:p-8 border border-white/5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div id="about-section" className="relative group glass-card p-6 md:p-8 border border-white/5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                 {isAdminForThisCompany && (
                   <button
                     onClick={() => {
@@ -731,7 +731,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
               </div>
 
               {/* Amenities Grid ("Servicios Exclusivos") */}
-              <div className="relative group glass-card p-6 md:p-8 border border-white/5 space-y-6 text-left">
+              <div id="services-section" className="relative group glass-card p-6 md:p-8 border border-white/5 space-y-6 text-left">
                 {isAdminForThisCompany && (
                   <button
                     onClick={() => {
