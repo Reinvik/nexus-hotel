@@ -295,10 +295,10 @@ function App() {
               onClick={() => setActiveView('portal')}
               className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                 (activeView as string) === 'portal'
-                  ? 'text-white'
-                  : 'border-transparent text-slate-450 hover:text-white'
+                  ? 'text-white font-black'
+                  : 'border-transparent text-slate-400 hover:text-white'
               }`}
-              style={{ borderColor: (activeView as string) === 'portal' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
+              style={{ borderColor: (activeView as string) === 'portal' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
             >
               Portal Público
             </button>
@@ -311,10 +311,10 @@ function App() {
                       onClick={() => setActiveView('kanban')}
                       className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                         activeView === 'kanban'
-                          ? 'text-white'
-                          : 'border-transparent text-slate-455 hover:text-white'
+                          ? 'text-white font-black'
+                          : 'border-transparent text-slate-400 hover:text-white'
                       }`}
-                      style={{ borderColor: activeView === 'kanban' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
+                      style={{ borderColor: activeView === 'kanban' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
                     >
                       Gemba Kanban
                     </button>
@@ -322,10 +322,10 @@ function App() {
                       onClick={() => setActiveView('calendar')}
                       className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                         activeView === 'calendar'
-                          ? 'text-white'
-                          : 'border-transparent text-slate-455 hover:text-white'
+                          ? 'text-white font-black'
+                          : 'border-transparent text-slate-400 hover:text-white'
                       }`}
-                      style={{ borderColor: activeView === 'calendar' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
+                      style={{ borderColor: activeView === 'calendar' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
                     >
                       Calendario
                     </button>
@@ -337,10 +337,10 @@ function App() {
                     onClick={() => setActiveView('cleaning')}
                     className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                       activeView === 'cleaning'
-                        ? 'text-white'
-                        : 'border-transparent text-slate-455 hover:text-white'
+                        ? 'text-white font-black'
+                        : 'border-transparent text-slate-400 hover:text-white'
                     }`}
-                    style={{ borderColor: activeView === 'cleaning' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
+                    style={{ borderColor: activeView === 'cleaning' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
                   >
                     Limpieza
                   </button>
@@ -351,10 +351,10 @@ function App() {
                     onClick={() => setActiveView('admin')}
                     className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
                       activeView === 'admin'
-                        ? 'text-white'
-                        : 'border-transparent text-slate-455 hover:text-white'
+                        ? 'text-white font-black'
+                        : 'border-transparent text-slate-400 hover:text-white'
                     }`}
-                    style={{ borderColor: activeView === 'admin' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
+                    style={{ borderColor: activeView === 'admin' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
                   >
                     Ajustes
                   </button>
@@ -365,10 +365,10 @@ function App() {
                     onClick={() => setActiveView('nexusowner')}
                     className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 flex items-center gap-1.5 bg-transparent border-none outline-none cursor-pointer ${
                       activeView === 'nexusowner'
-                        ? 'text-white'
+                        ? 'text-white font-black'
                         : 'border-transparent text-amber-500/70 hover:text-amber-400'
                     }`}
-                    style={{ borderColor: activeView === 'nexusowner' ? 'var(--theme-primary)' : 'transparent', borderBottomWidth: '2px' }}
+                    style={{ borderColor: activeView === 'nexusowner' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
                   >
                     <Globe className="w-3.5 h-3.5" />
                     NexusOwner
@@ -383,13 +383,13 @@ function App() {
         <div className="flex items-center gap-4">
           {/* Hotel Selector (visible to admin or Ariel Mellag) */}
           {(profile?.role === 'admin' || profile?.email === NEXUS_OWNER_EMAIL) && companies.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-[#121b2d] px-2.5 py-1.5 rounded-xl border border-white/5 shadow-sm">
+            <div className="flex items-center gap-1.5 bg-black px-3 py-2 rounded-none border border-white/10 shadow-sm transition-colors duration-200 hover:border-white/20">
               {logoUrl ? (
-                <div className="w-3.5 h-3.5 shrink-0 rounded bg-white flex items-center justify-center p-0.5 overflow-hidden border border-white/10">
+                <div className="w-3.5 h-3.5 shrink-0 rounded-none bg-white/10 flex items-center justify-center p-0.5 overflow-hidden border border-white/10">
                   <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                 </div>
               ) : (
-                <Building2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <Building2 className="w-3.5 h-3.5 shrink-0 text-slate-400" />
               )}
               <select
                 value={companyId}
@@ -397,7 +397,7 @@ function App() {
                 className="bg-transparent border-none text-[10px] font-black uppercase tracking-wider text-slate-300 outline-none cursor-pointer pr-1"
               >
                 {companies.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-[#0c1221] text-slate-300">
+                  <option key={c.id} value={c.id} className="bg-black text-slate-350">
                     {c.name}
                   </option>
                 ))}
@@ -407,17 +407,17 @@ function App() {
 
           {/* Quick View selector (visible only to logged-in users) */}
           {session && (
-            <div className="flex items-center gap-1.5 bg-[#121b2d] px-2.5 py-1.5 rounded-xl border border-white/5 shadow-sm">
-              <Sliders className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <div className="flex items-center gap-1.5 bg-black px-3 py-2 rounded-none border border-white/10 shadow-sm transition-colors duration-200 hover:border-white/20">
+              <Sliders className="w-3.5 h-3.5 shrink-0 text-slate-400" style={{ color: 'var(--primary, #8b5cf6)' }} />
               <select
                 value={activeView === 'portal' && !session ? 'guest' : profile?.role || 'guest'}
                 onChange={(e) => handleQuickViewChange(e.target.value as any)}
                 className="bg-transparent border-none text-[10px] font-black uppercase tracking-wider text-slate-300 outline-none cursor-pointer pr-1"
               >
-                <option value="guest" className="bg-[#0c1221] text-slate-300">Huésped</option>
-                <option value="receptionist" className="bg-[#0c1221] text-slate-300">Recepcionista</option>
-                <option value="cleaner" className="bg-[#0c1221] text-slate-300">Camarera</option>
-                <option value="admin" className="bg-[#0c1221] text-slate-300">Administrador</option>
+                <option value="guest" className="bg-black text-slate-350">Huésped</option>
+                <option value="receptionist" className="bg-black text-slate-350">Recepcionista</option>
+                <option value="cleaner" className="bg-black text-slate-350">Camarera</option>
+                <option value="admin" className="bg-black text-slate-350">Administrador</option>
               </select>
             </div>
           )}
@@ -438,21 +438,28 @@ function App() {
             )}
 
             {loading ? (
-              <div className="w-8 h-8 rounded-full bg-slate-800 animate-pulse" />
+              <div className="w-8 h-8 rounded-none bg-slate-900 border border-white/10 animate-pulse" />
             ) : session && profile ? (
-              <div className="flex items-center gap-3 bg-[#121b2d] py-1.5 pl-3 pr-2.5 rounded-2xl border border-white/5">
+              <div className="flex items-center gap-3 bg-black py-1.5 pl-3 pr-2.5 rounded-none border border-white/10 shadow-sm">
                 <div className="text-left">
                   <span className="text-xs font-extrabold text-white block leading-tight">{profile.name || profile.email}</span>
                   <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-widest block mt-0.5">
                     {profile.role === 'admin' ? 'Administrador' : profile.role === 'cleaner' ? 'Camarera' : 'Recepcionista'}
                   </span>
                 </div>
-                <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xs uppercase">
+                <div 
+                  className="w-8 h-8 rounded-none border flex items-center justify-center font-bold text-xs uppercase transition-all duration-300"
+                  style={{ 
+                    backgroundColor: 'var(--primary-shadow, rgba(139, 92, 246, 0.1))',
+                    borderColor: 'var(--primary, #8b5cf6)',
+                    color: 'var(--primary, #8b5cf6)'
+                  }}
+                >
                   {profile.role.substring(0, 2)}
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-xl transition-all bg-transparent border-none outline-none cursor-pointer"
+                  className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-500 rounded-none transition-all bg-transparent border-none outline-none cursor-pointer"
                   title="Cerrar Sesión"
                 >
                   <LogOut className="w-4 h-4" />
