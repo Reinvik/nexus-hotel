@@ -108,15 +108,15 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
   };
 
   return (
-    <div className="space-y-6 staff-dashboard">
+    <div className="space-y-6 staff-dashboard keep-dark">
       {/* Header controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0e1726] p-6 rounded-3xl border border-white/5">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0e1726] p-6 rounded-none border border-white/5">
         <div>
           <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
             Calendario de Ocupación
-            <CalendarIcon className="w-5 h-5 text-blue-400" />
+            <CalendarIcon className="w-5 h-5" style={{ color: 'var(--primary, #8b5cf6)' }} />
           </h2>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
             Visualización mensual del rack de reservas y huéspedes por día
           </p>
         </div>
@@ -125,7 +125,7 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
           <div className="flex items-center gap-1.5">
             <button 
               onClick={handlePrevMonth}
-              className="p-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-lg transition-colors"
+              className="p-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-none transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -134,14 +134,18 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
             </span>
             <button 
               onClick={handleNextMonth}
-              className="p-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-lg transition-colors"
+              className="p-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-none transition-colors cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
           <button
             onClick={handleToday}
-            className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-xs font-black uppercase tracking-wider border border-blue-500/20 transition-all"
+            className="px-4 py-2 text-white rounded-none text-xs font-black uppercase tracking-wider transition-all border-none outline-none cursor-pointer"
+            style={{ 
+              backgroundColor: 'var(--primary, #8b5cf6)', 
+              boxShadow: '0 4px 10px 0 var(--primary-shadow, rgba(139, 92, 246, 0.2))' 
+            }}
           >
             Hoy
           </button>
@@ -150,11 +154,11 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
 
       {/* Grid calendar view */}
       {loading && rooms.length === 0 ? (
-        <div className="flex items-center justify-center h-64 bg-white/5 border border-white/5 rounded-3xl">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <div className="flex items-center justify-center h-64 bg-white/5 border border-white/5 rounded-none">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--primary, #8b5cf6)' }} />
         </div>
       ) : (
-        <div className="glass-card border border-white/5 overflow-x-auto custom-scrollbar shadow-2xl">
+        <div className="glass-card rounded-none border border-white/5 overflow-x-auto custom-scrollbar shadow-2xl">
           <table className="w-full border-collapse text-left text-xs min-w-[800px]">
             <thead>
               <tr className="border-b border-white/5 bg-white/20">
@@ -168,9 +172,11 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
                   return (
                     <th 
                       key={day.toString()} 
-                      className={`p-2 font-black text-center border-r border-white/5 min-w-10 ${
-                        isTodayDate ? 'bg-blue-600/20 text-blue-400' : 'text-slate-500'
-                      }`}
+                      className="p-2 font-black text-center border-r border-white/5 min-w-10 transition-all"
+                      style={{
+                        backgroundColor: isTodayDate ? 'var(--primary-shadow, rgba(139, 92, 246, 0.1))' : '',
+                        color: isTodayDate ? 'var(--primary, #8b5cf6)' : '#94a3b8'
+                      }}
                     >
                       <div className="text-[10px]">{dayName}</div>
                       <div className="text-xs font-extrabold mt-0.5">{dayNum}</div>
@@ -184,10 +190,10 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
                 <tr key={room.id} className="border-b border-white/5 hover:bg-white/[0.01] transition-colors">
                   <td className="p-4 font-extrabold text-white sticky left-0 bg-[#0c1221] border-r border-white/5 shadow-[5px_0_10px_rgba(0,0,0,0.5)]">
                     <div className="flex items-center gap-2">
-                      <Bed className="w-4 h-4 text-blue-400" />
+                      <Bed className="w-4 h-4" style={{ color: 'var(--primary, #8b5cf6)' }} />
                       <div>
-                        <span className="block font-black text-sm">#{room.room_number}</span>
-                        <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">{room.type}</span>
+                        <span className="block font-black text-sm text-white">#{room.room_number}</span>
+                        <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">{room.type}</span>
                       </div>
                     </div>
                   </td>
@@ -204,7 +210,7 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
                         {booking ? (
                           <button
                             onClick={() => handleCellClick(booking, room)}
-                            className={`w-full h-10 rounded-lg flex items-center justify-center p-1.5 transition-all text-left text-[10px] font-black uppercase overflow-hidden hover:scale-[1.02] active:scale-[0.98] select-none ${
+                            className={`w-full h-10 rounded-none flex items-center justify-center p-1.5 transition-all text-left text-[10px] font-black uppercase overflow-hidden hover:scale-[1.02] active:scale-[0.98] select-none cursor-pointer ${
                               isPaid 
                                 ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 shadow-sm' 
                                 : 'bg-orange-600/20 text-orange-400 border border-orange-500/20 shadow-sm'
@@ -235,9 +241,9 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
 
       {/* Booking Detail Modal */}
       {selectedBooking && selectedRoomForBooking && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[150] flex items-center justify-center p-4">
-          <div className="glass-card max-w-md w-full border border-white/10 overflow-hidden relative shadow-2xl">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-xl z-[150] flex items-center justify-center p-4">
+          <div className="glass-card rounded-none max-w-md w-full border border-white/10 overflow-hidden relative shadow-2xl">
+            <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: 'var(--primary, #8b5cf6)' }} />
             
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-[#0d1525]">
               <div>
@@ -250,7 +256,7 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
               </div>
               <button 
                 onClick={() => { setSelectedBooking(null); setSelectedRoomForBooking(null); }}
-                className="text-xs text-slate-500 hover:text-white uppercase font-black tracking-wider"
+                className="text-xs text-slate-400 hover:text-white uppercase font-black tracking-wider bg-transparent border-none cursor-pointer outline-none"
               >
                 Cerrar
               </button>
@@ -258,10 +264,17 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
 
             <div className="p-6 space-y-4">
               {/* Guest Card */}
-              <div className="space-y-3 bg-[#111827]/60 p-4 rounded-2xl border border-white/5">
+              <div className="space-y-3 bg-[#111827]/60 p-4 rounded-none border border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                    <User className="w-4 h-4 text-blue-400" />
+                  <div 
+                    className="w-8 h-8 rounded-none border flex items-center justify-center"
+                    style={{ 
+                      backgroundColor: 'var(--primary-shadow, rgba(139, 92, 246, 0.1))',
+                      borderColor: 'var(--primary, #8b5cf6)',
+                      color: 'var(--primary, #8b5cf6)'
+                    }}
+                  >
+                    <User className="w-4 h-4" />
                   </div>
                   <div>
                     <span className="text-[9px] text-slate-500 uppercase font-black block">Nombre Huésped</span>
@@ -271,8 +284,8 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
 
                 {selectedBooking.guest_phone && (
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-500/10 border border-white/5 flex items-center justify-center">
-                      <Phone className="w-4 h-4 text-slate-400" />
+                    <div className="w-8 h-8 rounded-none bg-slate-500/10 border border-white/5 flex items-center justify-center text-slate-400">
+                      <Phone className="w-4 h-4" />
                     </div>
                     <div>
                       <span className="text-[9px] text-slate-500 uppercase font-black block">WhatsApp</span>
@@ -283,8 +296,8 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
 
                 {selectedBooking.guest_email && (
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-500/10 border border-white/5 flex items-center justify-center">
-                      <Mail className="w-4 h-4 text-slate-400" />
+                    <div className="w-8 h-8 rounded-none bg-slate-500/10 border border-white/5 flex items-center justify-center text-slate-400">
+                      <Mail className="w-4 h-4" />
                     </div>
                     <div>
                       <span className="text-[9px] text-slate-500 uppercase font-black block">Email</span>
@@ -295,8 +308,8 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
 
                 {selectedBooking.guest_rut && (
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-500/10 border border-white/5 flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-slate-400" />
+                    <div className="w-8 h-8 rounded-none bg-slate-500/10 border border-white/5 flex items-center justify-center text-slate-400">
+                      <FileText className="w-4 h-4" />
                     </div>
                     <div>
                       <span className="text-[9px] text-slate-500 uppercase font-black block">RUT</span>
@@ -307,7 +320,7 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
               </div>
 
               {/* Dates & Billing */}
-              <div className="grid grid-cols-2 gap-3 bg-[#111827]/40 p-4 rounded-2xl border border-white/5">
+              <div className="grid grid-cols-2 gap-3 bg-[#111827]/40 p-4 rounded-none border border-white/5">
                 <div>
                   <span className="text-[9px] text-slate-500 uppercase font-black block">Check-in</span>
                   <span className="text-xs font-bold text-white block">{selectedBooking.check_in_date}</span>
@@ -327,18 +340,18 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
               </div>
 
               {/* Status and Actions */}
-              <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 text-xs font-bold">
+              <div className="flex items-center justify-between p-3 bg-white/5 rounded-none border border-white/5 text-xs font-bold">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span className="uppercase text-[10px] tracking-wider text-slate-300">Pago Aprobado</span>
                 </div>
-                <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full text-[9px] font-black uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-none text-[9px] font-black uppercase tracking-wider">
                   {selectedBooking.payment_status}
                 </span>
               </div>
 
               {selectedBooking.notes && (
-                <div className="p-3 bg-white/5 rounded-xl border border-white/5 text-xs text-slate-400">
+                <div className="p-3 bg-white/5 rounded-none border border-white/5 text-xs text-slate-400">
                   <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Notas</span>
                   {selectedBooking.notes}
                 </div>
@@ -348,7 +361,7 @@ export function BookingCalendar({ companyId }: BookingCalendarProps) {
             <div className="p-5 bg-[#0a0f18] border-t border-white/5 flex gap-3">
               <button
                 onClick={() => handleCancelBooking(selectedBooking.id)}
-                className="flex-1 py-3 bg-red-600/10 border border-red-500/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                className="flex-1 py-3 bg-red-650/15 border border-red-500/30 hover:bg-red-600 text-red-400 hover:text-white rounded-none text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
               >
                 Anular Reserva
               </button>
