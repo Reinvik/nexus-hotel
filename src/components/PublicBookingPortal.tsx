@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { hotelRpc } from '../lib/supabase';
 import type { Company, Room, Booking, Profile } from '../types';
 import { 
-  Calendar, User, Phone, Mail, FileText, Loader2, Bed, Check, 
+  Calendar, User, Users, Phone, Mail, FileText, Loader2, Bed, Check, 
   ArrowRight, ShieldCheck, Sparkles, Edit3, Wifi, Waves, Coffee, 
   Tv, X, Save, Image as ImageIcon, Palette, History,
   Car, Flame, Wind, Key, Utensils, Shield, Wine, Bike, Bath
@@ -69,6 +69,16 @@ const LANDING_BANNER_PRESETS = [
   { name: 'Boutique Urbano', url: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80' },
   { name: 'Cabaña de Montaña', url: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80' }
 ];
+
+const getRoomCapacity = (type: string) => {
+  switch (type) {
+    case 'Single': return '1 Persona';
+    case 'Double': return '2 Personas';
+    case 'Suite': return 'Hasta 4 Personas';
+    case 'Deluxe': return 'Hasta 2 Personas';
+    default: return '2 Personas';
+  }
+};
 
 interface PublicBookingPortalProps {
   profile?: Profile | null;
@@ -375,7 +385,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
     const calc = getRoomCalculation(room);
     setPaymentAmount(calc.total);
     setTimeout(() => {
-      document.getElementById('booking-form-section')?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('booking-form-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   };
 
@@ -555,16 +565,16 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
     >
       {/* Live Editor Sticky Status Bar */}
       {isAdminForThisCompany && (
-        <div className="bg-[#121c30]/90 backdrop-blur border border-emerald-500/20 p-4 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-3 shadow-lg shadow-emerald-500/5 relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500" />
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        <div className="bg-slate-950/95 backdrop-blur-md border border-white/10 p-5 rounded-none flex flex-col sm:flex-row justify-between items-center gap-4 shadow-2xl relative overflow-hidden keep-dark">
+          <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: themePrimary }} />
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: themePrimary }}></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: themePrimary }}></span>
             </span>
             <div className="text-left">
-              <span className="text-xs font-black uppercase text-white block">Modo Edición en Vivo Activo</span>
-              <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest block">
+              <span className="text-xs font-black uppercase text-white tracking-widest block">Modo Edición en Vivo Activo</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mt-0.5">
                 Eres administrador. Los cambios se reflejarán instantáneamente para tus clientes.
               </span>
             </div>
@@ -582,7 +592,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
               setActiveEditorTab('cover');
               setIsEditorOpen(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
+            className="flex items-center gap-2 px-5 py-2 text-white rounded-none text-xs font-black uppercase tracking-widest transition-all shadow-lg hover:brightness-115 active:translate-y-[1px] shrink-0 border border-white/15 cursor-pointer"
+            style={{ backgroundColor: themePrimary }}
           >
             <Edit3 className="w-3.5 h-3.5" />
             Editar Plantilla Modular
@@ -665,7 +676,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
       {!bookingSuccess && (
         <div className="space-y-16">
           {/* Dynamic Hero Section with Parallax Background & Custom Title */}
-          <div className="relative h-[480px] rounded-3xl overflow-hidden flex items-end p-8 md:p-12 border border-white/5 shadow-2xl group keep-dark">
+          <div className="relative h-[480px] rounded-none overflow-hidden flex items-end p-8 md:p-12 border border-white/5 shadow-2xl group keep-dark">
             <div 
               className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
               style={{ backgroundImage: `url(${bannerUrl})` }}
@@ -674,7 +685,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
             
             <div className="relative z-10 max-w-2xl space-y-4 text-left">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 bg-white/10 backdrop-blur rounded-lg text-[9px] font-black uppercase tracking-widest text-white border border-white/15">
+                <span className="px-3 py-1 bg-slate-950/75 backdrop-blur rounded-none text-[9px] font-black uppercase tracking-widest text-white border border-white/10">
                   Estadía Premium
                 </span>
                 {isAdminForThisCompany && (
@@ -683,7 +694,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                       setActiveEditorTab('cover');
                       setIsEditorOpen(true);
                     }}
-                    className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-all scale-90"
+                    className="p-1.5 text-white rounded-none transition-all scale-90 border border-white/10 hover:brightness-110 cursor-pointer"
+                    style={{ backgroundColor: themePrimary }}
                     title="Editar Título y Portada"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -701,7 +713,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
 
               <div className="pt-2">
                 <button 
-                  onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                   className="px-6 py-3 rounded-none text-[10px] font-black uppercase tracking-[0.2em] text-white flex items-center gap-2 transition-all hover:translate-y-[-2px] shadow-lg shadow-black/30 border-none outline-none cursor-pointer"
                   style={{ backgroundColor: themePrimary }}
                 >
@@ -726,7 +738,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                       setActiveEditorTab('history');
                       setIsEditorOpen(true);
                     }}
-                    className="absolute top-4 right-4 p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all opacity-0 group-hover:opacity-100 shadow-md"
+                    className="absolute top-4 right-4 p-2 text-white rounded-none transition-all opacity-0 group-hover:opacity-100 shadow-lg border border-white/10 hover:brightness-110 cursor-pointer"
+                    style={{ backgroundColor: themePrimary }}
                     title="Editar Historia"
                   >
                     <Edit3 className="w-4 h-4" />
@@ -785,7 +798,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                       setActiveEditorTab('services');
                       setIsEditorOpen(true);
                     }}
-                    className="absolute top-4 right-4 p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all opacity-0 group-hover:opacity-100 shadow-md"
+                    className="absolute top-4 right-4 p-2 text-white rounded-none transition-all opacity-0 group-hover:opacity-100 shadow-lg border border-white/10 hover:brightness-110 cursor-pointer"
+                    style={{ backgroundColor: themePrimary }}
                     title="Editar Servicios"
                   >
                     <Edit3 className="w-4 h-4" />
@@ -904,7 +918,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                           {isAdminForThisCompany && (
                             <button
                               onClick={() => handleOpenRoomEditor(room)}
-                              className="absolute top-3 right-3 z-20 p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all shadow-lg active:scale-95"
+                              className="absolute top-3 right-3 z-20 p-2 text-white rounded-none transition-all shadow-lg hover:brightness-110 cursor-pointer border border-white/10"
+                              style={{ backgroundColor: themePrimary }}
                               title="Editar Habitación Rápido"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -931,6 +946,10 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                                 <h3 className="font-extrabold text-white text-base leading-snug">{room.name}</h3>
                                 <span className="px-2 py-0.5 bg-white/5 rounded text-[8px] font-extrabold uppercase text-slate-400 tracking-wider">
                                   {room.type}
+                                </span>
+                                <span className="px-2 py-0.5 bg-slate-800/40 rounded-none text-[8px] font-black uppercase text-slate-300 tracking-wider flex items-center gap-1 border border-white/5">
+                                  <Users className="w-2.5 h-2.5 text-slate-400" />
+                                  {getRoomCapacity(room.type)}
                                 </span>
                               </div>
                               <p className="text-xs text-slate-400 leading-relaxed font-medium">
@@ -993,7 +1012,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                     })}
 
                     {rooms.length === 0 && (
-                      <div className="text-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/5">
+                      <div className="text-center py-12 bg-white/5 rounded-none border border-dashed border-white/10">
                         <Bed className="w-12 h-12 text-slate-700 mx-auto mb-4" />
                         <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">No hay habitaciones registradas en este hotel</p>
                       </div>
@@ -1004,11 +1023,11 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
             </div>
 
             {/* Right panel: Booking Registration Form */}
-            <div className="lg:col-span-4 lg:sticky lg:top-8">
-              <div id="booking-form-section" className="glass-card p-6 border border-white/5 space-y-6 relative overflow-hidden">
+            <div className="lg:col-span-4 lg:sticky lg:top-24">
+              <div id="booking-form-section" className="glass-card p-6 border border-slate-200/80 space-y-6 relative overflow-y-auto max-h-[calc(100vh-140px)] custom-scrollbar rounded-none">
                 <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: 'var(--theme-primary)' }} />
                 
-                <div className="border-b border-slate-100 pb-4 text-left">
+                <div className="border-b border-slate-150 pb-4 text-left">
                   <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
                     Detalles de la Reserva
                   </h2>
@@ -1026,7 +1045,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                 {selectedRoom ? (
                   <form onSubmit={handleOpenPayment} className="space-y-4">
                     {/* Inputs de fecha interactivos integrados en la tarjeta lateral */}
-                    <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-2xl space-y-3">
+                    <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-none space-y-3">
                       <span className="text-[10px] text-slate-700 font-black uppercase tracking-wider block border-b border-slate-200 pb-1.5">
                         Ajustar Fechas de Estadía
                       </span>
@@ -1038,7 +1057,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                             value={checkIn}
                             min={format(new Date(), 'yyyy-MM-dd')}
                             onChange={handleCheckInChange}
-                            className="w-full px-2 py-1.5 bg-white border border-slate-350 rounded-lg text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
+                            className="w-full px-2 py-1.5 bg-white border border-slate-350 rounded-none text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
                           />
                         </div>
                         <div className="space-y-1 text-left">
@@ -1048,46 +1067,46 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                             value={checkOut}
                             min={format(addDays(parseISO(checkIn), 1), 'yyyy-MM-dd')}
                             onChange={(e) => setCheckOut(e.target.value)}
-                            className="w-full px-2 py-1.5 bg-white border border-slate-350 rounded-lg text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
+                            className="w-full px-2 py-1.5 bg-white border border-slate-350 rounded-none text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Summary Box */}
-                    <div className="bg-[#121c30] rounded-2xl p-4 border border-white/5 space-y-2 text-xs text-left">
+                    <div className="bg-slate-50 rounded-none p-4 border border-slate-200/60 space-y-3 text-xs text-left">
                       <div className="flex justify-between">
                         <span className="text-slate-500 uppercase font-black">Habitación</span>
-                        <span className="text-white font-bold">#{selectedRoom.room_number} — {selectedRoom.name}</span>
+                        <span className="text-slate-900 font-bold">#{selectedRoom.room_number} — {selectedRoom.name} ({getRoomCapacity(selectedRoom.type)})</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500 uppercase font-black">Noches</span>
-                        <span className="text-white font-bold">{daysCount} noche{daysCount > 1 ? 's' : ''}</span>
+                        <span className="text-slate-900 font-bold">{daysCount} noche{daysCount > 1 ? 's' : ''}</span>
                       </div>
                       
                       {/* Desglose interactivo noche a noche */}
                       {pricingBreakdown.length > 0 && (
-                        <div className="bg-[#090d16]/60 rounded-xl p-3 border border-white/5 space-y-2 mt-2">
-                          <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block border-b border-white/5 pb-1">
+                        <div className="bg-white rounded-none p-3 border border-slate-200/60 space-y-2 mt-2">
+                          <span className="text-[9px] text-slate-550 font-black uppercase tracking-wider block border-b border-slate-150 pb-1">
                             Desglose de Tarifas
                           </span>
                           <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
                             {pricingBreakdown.map((item, idx) => (
                               <div key={idx} className="flex justify-between items-start text-[10px]">
-                                <div className="text-slate-350">
+                                <div className="text-slate-700 font-medium">
                                   <span className="capitalize">{format(item.date, "eeee dd 'de' MMM", { locale: es })}</span>
                                   {item.ruleName && (
-                                    <span className="text-[8px] text-emerald-455 font-black block uppercase tracking-tight leading-none mt-0.5" style={{ color: '#10b981' }}>
+                                    <span className="text-[8px] font-black block uppercase tracking-tight leading-none mt-0.5" style={{ color: 'var(--theme-primary)' }}>
                                       {item.ruleName}
                                     </span>
                                   )}
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-white font-bold">
+                                  <span className="text-slate-900 font-bold">
                                     ${item.finalPrice.toLocaleString('es-CL')}
                                   </span>
                                   {item.ruleName && (
-                                    <span className="text-[8px] text-slate-500 block line-through">
+                                    <span className="text-[8px] text-slate-400 block line-through">
                                       ${item.basePrice.toLocaleString('es-CL')}
                                     </span>
                                   )}
@@ -1098,18 +1117,18 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                         </div>
                       )}
 
-                      <div className="h-[1px] bg-white/5 my-1" />
+                      <div className="h-[1px] bg-slate-200 my-1" />
                       <div className="flex justify-between items-center text-sm font-black pt-1">
-                        <span className="text-slate-400 uppercase">Monto Total</span>
-                        <span className="text-orange-400">${paymentAmount.toLocaleString('es-CL')} CLP</span>
+                        <span className="text-slate-500 uppercase">Monto Total</span>
+                        <span className="text-slate-900 font-black text-sm">${paymentAmount.toLocaleString('es-CL')} CLP</span>
                       </div>
                     </div>
 
                     {/* Form Inputs */}
                     <div className="space-y-3 text-left">
                       <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
-                          <User className="w-3 h-3" /> Nombre Huésped *
+                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider flex items-center gap-1">
+                          <User className="w-3 h-3" style={{ color: 'var(--theme-primary)' }} /> Nombre Huésped *
                         </label>
                         <input
                           type="text"
@@ -1117,13 +1136,13 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                           placeholder="Nombre y Apellido"
                           value={guestName}
                           onChange={(e) => setGuestName(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
-                          <Phone className="w-3 h-3" /> WhatsApp de Contacto *
+                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider flex items-center gap-1">
+                          <Phone className="w-3 h-3" style={{ color: 'var(--theme-primary)' }} /> WhatsApp de Contacto *
                         </label>
                         <input
                           type="tel"
@@ -1131,13 +1150,13 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                           placeholder="Ej: +56 9 1234 5678"
                           value={guestPhone}
                           onChange={(e) => setGuestPhone(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
-                          <Mail className="w-3 h-3" /> Correo Electrónico *
+                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider flex items-center gap-1">
+                          <Mail className="w-3 h-3" style={{ color: 'var(--theme-primary)' }} /> Correo Electrónico *
                         </label>
                         <input
                           type="email"
@@ -1145,31 +1164,31 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                           placeholder="ejemplo@correo.com"
                           value={guestEmail}
                           onChange={(e) => setGuestEmail(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
-                          <FileText className="w-3 h-3" /> RUT (Para facturación)
+                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider flex items-center gap-1">
+                          <FileText className="w-3 h-3" style={{ color: 'var(--theme-primary)' }} /> RUT (Para facturación)
                         </label>
                         <input
                           type="text"
                           placeholder="Ej: 12.345.678-9"
                           value={guestRut}
                           onChange={(e) => setGuestRut(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-bold outline-none text-xs"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Notas adicionales</label>
+                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider">Notas adicionales</label>
                         <textarea
                           rows={2}
                           placeholder="Peticiones especiales, horario de arribo, etc."
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-medium outline-none text-xs resize-none"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-medium outline-none text-xs resize-none focus:border-slate-500"
                         />
                       </div>
                     </div>

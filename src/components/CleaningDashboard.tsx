@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { hotelRpc } from '../lib/supabase';
-import type { CleaningTask, Profile } from '../types';
+import type { CleaningTask, Profile, Room } from '../types';
 import { Loader2, Play, CheckCircle2, User, RefreshCw, Clock, Sparkles, AlertCircle } from 'lucide-react';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 
@@ -19,15 +19,61 @@ export function CleaningDashboard({ companyId }: CleaningDashboardProps) {
     if (!companyId) return;
     setLoading(true);
     try {
-      // Fetch cleaning tasks with room info
+      // 1. Fetch cleaning tasks with room info
       const { data: tasksData, error: tasksError } = await hotelRpc.getCleaningTasksWithRooms(companyId);
       if (tasksError) throw tasksError;
-      // Map room info into task objects
+      
       const mappedTasks = ((tasksData as any[]) || []).map((t: any) => ({
         ...t,
         room: { room_number: t.room_number, name: t.room_name }
       }));
-      setTasks(mappedTasks);
+
+      // 2. Reconcile: Fetch all rooms to check for missing cleaning tasks for dirty/cleaning rooms
+      const { data: roomsData, error: roomsError } = await hotelRpc.getRooms(companyId);
+      if (roomsError) throw roomsError;
+      
+      const allRooms = (roomsData as Room[]) || [];
+      const dirtyOrCleaningRooms = allRooms.filter(r => r.status === 'Dirty' || r.status === 'Cleaning');
+      
+      // Find rooms that don't have a pending or in-progress cleaning task
+      const missingTasks = dirtyOrCleaningRooms.filter(room => {
+        const hasActiveTask = mappedTasks.some(
+          t => t.room_id === room.id && (t.status === 'pending' || t.status === 'in_progress')
+        );
+        return !hasActiveTask;
+      });
+
+      // 3. Create missing cleaning tasks in the database
+      if (missingTasks.length > 0) {
+        console.log(`Reconciliación: Creando ${missingTasks.length} tareas de aseo para habitaciones sucias sin tarea registrada...`);
+        for (const room of missingTasks) {
+          try {
+            await hotelRpc.createCleaningTask({
+              companyId,
+              roomId: room.id,
+              notes: room.status === 'Cleaning' 
+                ? 'Aseo en curso (reconciliado automáticamente).' 
+                : 'Habitación sucia pendiente de aseo (reconciliado automáticamente).'
+            });
+          } catch (createErr) {
+            console.error(`Error autocreando tarea de aseo para pieza #${room.room_number}:`, createErr);
+          }
+        }
+        
+        // Refetch cleaning tasks to display the new ones
+        const { data: refetchedData, error: refetchError } = await hotelRpc.getCleaningTasksWithRooms(companyId);
+        if (!refetchError && refetchedData) {
+          const finalTasks = (refetchedData as any[]).map((t: any) => ({
+            ...t,
+            room: { room_number: t.room_number, name: t.room_name }
+          }));
+          setTasks(finalTasks);
+        } else {
+          setTasks(mappedTasks);
+        }
+      } else {
+        setTasks(mappedTasks);
+      }
 
       // Fetch cleaners profiles
       const { data: profilesData, error: profilesError } = await hotelRpc.getCleaners(companyId);

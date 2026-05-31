@@ -240,7 +240,7 @@ function App() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
 
       {/* Main Header / Top Navbar */}
-      <header className="sticky top-0 z-50 bg-black border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-xl">
+      <header className="sticky top-0 z-50 bg-black border-b border-white/10 px-4 py-3 md:px-6 md:py-4 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
           {logoUrl ? (
             <div className="h-14 w-auto max-w-[120px] shrink-0 flex items-center justify-center overflow-hidden bg-white/5 p-1 rounded">
@@ -265,25 +265,25 @@ function App() {
         {activeView === 'portal' ? (
           <nav className="hidden lg:flex items-center gap-8">
             <button
-              onClick={() => document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
             >
               Nuestra Identidad
             </button>
             <button
-              onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
             >
               Servicios
             </button>
             <button
-              onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
             >
               Habitaciones
             </button>
             <button
-              onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
               className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
             >
               Contacto
@@ -383,7 +383,7 @@ function App() {
         <div className="flex items-center gap-4">
           {/* Hotel Selector (visible to admin or Ariel Mellag) */}
           {(profile?.role === 'admin' || profile?.email === NEXUS_OWNER_EMAIL) && companies.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-black px-3 py-2 rounded-none border border-white/10 shadow-sm transition-colors duration-200 hover:border-white/20">
+            <div className="hidden md:flex items-center gap-1.5 bg-black px-3 py-2 rounded-none border border-white/10 shadow-sm transition-colors duration-200 hover:border-white/20">
               {logoUrl ? (
                 <div className="w-3.5 h-3.5 shrink-0 rounded-none bg-white/10 flex items-center justify-center p-0.5 overflow-hidden border border-white/10">
                   <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
@@ -407,7 +407,7 @@ function App() {
 
           {/* Quick View selector (visible only to logged-in users) */}
           {session && (
-            <div className="flex items-center gap-1.5 bg-black px-3 py-2 rounded-none border border-white/10 shadow-sm transition-colors duration-200 hover:border-white/20">
+            <div className="hidden md:flex items-center gap-1.5 bg-black px-3 py-2 rounded-none border border-white/10 shadow-sm transition-colors duration-200 hover:border-white/20">
               <Sliders className="w-3.5 h-3.5 shrink-0 text-slate-400" style={{ color: 'var(--primary, #8b5cf6)' }} />
               <select
                 value={activeView === 'portal' && !session ? 'guest' : profile?.role || 'guest'}
@@ -503,25 +503,25 @@ function App() {
                 {activeView === 'portal' ? (
                   <>
                     <button
-                      onClick={() => { document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      onClick={() => { document.getElementById('about-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setMobileMenuOpen(false); }}
                       className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
                     >
                       Nuestra Identidad
                     </button>
                     <button
-                      onClick={() => { document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      onClick={() => { document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setMobileMenuOpen(false); }}
                       className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
                     >
                       Servicios
                     </button>
                     <button
-                      onClick={() => { document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      onClick={() => { document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setMobileMenuOpen(false); }}
                       className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
                     >
                       Habitaciones
                     </button>
                     <button
-                      onClick={() => { document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); }}
+                      onClick={() => { document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'end' }); setMobileMenuOpen(false); }}
                       className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
                     >
                       Contacto
@@ -597,6 +597,56 @@ function App() {
                 )}
               </div>
 
+              {/* Selectores para personal en móvil */}
+              {session && (
+                <div className="flex flex-col gap-3 px-4 py-2 border-t border-white/5 lg:hidden">
+                  {/* Selector de Hotel en móvil */}
+                  {(profile?.role === 'admin' || profile?.email === NEXUS_OWNER_EMAIL) && companies.length > 0 && (
+                    <div className="flex items-center gap-2 bg-black/40 px-3 py-2 border border-white/10">
+                      {logoUrl ? (
+                        <div className="w-4 h-4 shrink-0 rounded-none bg-white/10 flex items-center justify-center p-0.5 overflow-hidden border border-white/10">
+                          <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <Building2 className="w-4 h-4 shrink-0 text-slate-400" />
+                      )}
+                      <select
+                        value={companyId}
+                        onChange={(e) => {
+                          setSelectedCompanyId(e.target.value);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="bg-transparent border-none text-xs font-black uppercase tracking-wider text-slate-350 outline-none cursor-pointer pr-1 flex-grow"
+                      >
+                        {companies.map((c) => (
+                          <option key={c.id} value={c.id} className="bg-slate-900 text-slate-300">
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Selector de Vista Rápida en móvil */}
+                  <div className="flex items-center gap-2 bg-black/40 px-3 py-2 border border-white/10">
+                    <Sliders className="w-4 h-4 shrink-0 text-slate-400" style={{ color: 'var(--primary, #8b5cf6)' }} />
+                    <select
+                      value={activeView === 'portal' && !session ? 'guest' : profile?.role || 'guest'}
+                      onChange={(e) => {
+                        handleQuickViewChange(e.target.value as any);
+                        setMobileMenuOpen(false);
+                      }}
+                      className="bg-transparent border-none text-xs font-black uppercase tracking-wider text-slate-350 outline-none cursor-pointer pr-1 flex-grow"
+                    >
+                      <option value="guest" className="bg-slate-900 text-slate-300">Huésped</option>
+                      <option value="receptionist" className="bg-slate-900 text-slate-300">Recepcionista</option>
+                      <option value="cleaner" className="bg-slate-900 text-slate-300">Camarera</option>
+                      <option value="admin" className="bg-slate-900 text-slate-300">Administrador</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
               <div className="h-[1px] bg-white/5" />
 
               <div className="pt-2">
@@ -631,7 +681,7 @@ function App() {
       </AnimatePresence>
 
       {/* Main Container */}
-      <main className="flex-1 px-4 md:px-8 pt-24 pb-16 relative z-10">
+      <main className="flex-1 px-4 md:px-8 pt-20 md:pt-24 pb-16 relative z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}

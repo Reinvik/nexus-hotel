@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { hotelRpc } from '../lib/supabase';
 import type { Room, Booking, RoomStatus } from '../types';
 import { 
-  User, Loader2, ArrowRight, Play, CheckCircle2, RefreshCw,
+  User, Users, Loader2, ArrowRight, Play, CheckCircle2, RefreshCw,
   Phone, Mail, FileText, Moon 
 } from 'lucide-react';
 
@@ -20,6 +20,16 @@ const calculateNights = (checkIn: string, checkOut: string) => {
     return diffDays || 1;
   } catch (e) {
     return 1;
+  }
+};
+
+const getRoomCapacity = (type: string) => {
+  switch (type) {
+    case 'Single': return '1 pers';
+    case 'Double': return '2 pers';
+    case 'Suite': return '4 pers';
+    case 'Deluxe': return '2 pers';
+    default: return '2 pers';
   }
 };
 
@@ -67,6 +77,18 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
     try {
       const { error } = await hotelRpc.updateRoomStatus(roomId, newStatus);
       if (error) throw error;
+
+      if (newStatus === 'Dirty') {
+        const { error: cError } = await hotelRpc.createCleaningTask({
+          companyId,
+          roomId,
+          notes: 'Limpieza requerida manual.'
+        });
+        if (cError) {
+          console.error('Error al crear tarea de limpieza manual:', cError);
+        }
+      }
+
       setRooms(prev => prev.map(r => r.id === roomId ? { ...r, status: newStatus } : r));
     } catch (err: any) {
       alert(`Error al actualizar estado: ${err.message}`);
@@ -94,8 +116,17 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
       const { error: rError } = await hotelRpc.updateRoomStatus(room.id, 'Dirty');
       if (rError) throw rError;
 
-      // 3. Create cleaning task via direct hotel schema (using supabase.rpc)
-      // For now refresh data — cleaning task creation handled separately
+      // 3. Create cleaning task
+      const { error: cError } = await hotelRpc.createCleaningTask({
+        companyId,
+        roomId: room.id,
+        bookingId: booking.id,
+        notes: `Limpieza requerida tras Check-out de ${booking.guest_name}.`
+      });
+      if (cError) {
+        console.error('Error al crear tarea de limpieza en check-out:', cError);
+      }
+
       await loadKanbanData();
     } catch (err: any) {
       console.error(err);
@@ -143,7 +174,7 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
             return (
               <div 
                 key={col.key}
-                className={`rounded-2xl border border-white/5 p-4 flex flex-col min-h-[500px] ${col.bg}`}
+                className={`rounded-none border border-white/5 p-3 flex flex-col min-h-[500px] ${col.bg}`}
               >
                 {/* Column Title */}
                 <div className="flex justify-between items-center border-b border-white/5 pb-3 mb-4">
@@ -168,7 +199,7 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
                     return (
                       <div
                         key={room.id}
-                        className="bg-[#0e1726]/80 border border-white/5 hover:border-white/10 rounded-xl p-4 space-y-3 shadow-md hover:shadow-lg transition-all relative overflow-hidden group"
+                        className="bg-[#0e1726]/80 border border-white/5 hover:border-white/10 rounded-none p-3 space-y-2 shadow-md hover:shadow-lg transition-all relative overflow-hidden group"
                       >
                         {isActionLoading && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
@@ -181,29 +212,30 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
                           <span className="px-2 py-0.5 bg-white/5 rounded text-[10px] font-black tracking-widest text-slate-400 border border-white/5">
                             #{room.room_number}
                           </span>
-                          <span className="text-[9px] uppercase font-bold text-slate-500 tracking-wider">
-                            {room.type}
+                          <span className="text-[9px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
+                            <Users className="w-2.5 h-2.5 text-slate-400" />
+                            {room.type} ({getRoomCapacity(room.type)})
                           </span>
                         </div>
 
                         <div>
-                          <h4 className="font-extrabold text-white text-sm">{room.name}</h4>
-                          <p className="text-[10px] text-slate-400 mt-1">${room.price_per_day.toLocaleString('es-CL')}/noche</p>
+                          <h4 className="font-extrabold text-white text-xs">{room.name}</h4>
+                          <p className="text-[9px] text-slate-400 mt-0.5">${room.price_per_day.toLocaleString('es-CL')}/noche</p>
                         </div>
 
                         {/* Guest info card */}
                         {guest && (
-                          <div className="bg-[#10192a] p-3 rounded-xl border border-white/5 space-y-2 relative overflow-hidden">
+                          <div className="bg-[#10192a] p-2.5 rounded-none border border-white/5 space-y-1.5 relative overflow-hidden">
                             {/* Nights badge / length of stay */}
-                            <div className="absolute top-2 right-2 bg-blue-500/10 text-blue-400 font-extrabold text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-blue-500/10 flex items-center gap-1">
+                            <div className="absolute top-2 right-2 bg-blue-500/10 text-blue-400 font-extrabold text-[8px] uppercase tracking-wider px-1 py-0.5 rounded-none border border-blue-500/10 flex items-center gap-1">
                               <Moon className="w-2.5 h-2.5" />
                               <span>{calculateNights(guest.check_in_date, guest.check_out_date)} Noches</span>
                             </div>
 
                             {/* Guest main name & role */}
                             <div className="flex items-center gap-2 pr-12">
-                              <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/10 text-blue-400">
-                                <User className="w-3 h-3" />
+                              <div className="w-5 h-5 rounded-none bg-blue-500/10 flex items-center justify-center border border-blue-500/10 text-blue-400">
+                                <User className="w-2.5 h-2.5" />
                               </div>
                               <div className="overflow-hidden">
                                 <span className="font-extrabold text-white text-xs block truncate leading-tight">
@@ -213,45 +245,45 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
                                   <span className="text-[8px] text-slate-500 font-black uppercase block tracking-wider mt-0.5">
                                     RUT: {guest.guest_rut}
                                   </span>
-                                )}
+                                  )}
                               </div>
                             </div>
 
                             {/* Divider line */}
-                            <div className="h-[1px] bg-white/5 my-1.5" />
+                            <div className="h-[1px] bg-white/5 my-1" />
 
-                            {/* Contact Details */}
-                            <div className="space-y-1">
+                            {/* Contact Details in a single row grid */}
+                            <div className="grid grid-cols-2 gap-1 text-[8px] text-slate-400 font-semibold">
                               {guest.guest_phone && (
-                                <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-semibold">
-                                  <Phone className="w-3 h-3 text-slate-500 shrink-0" />
+                                <div className="flex items-center gap-1 truncate">
+                                  <Phone className="w-2.5 h-2.5 text-slate-500 shrink-0" />
                                   <span className="truncate">{guest.guest_phone}</span>
                                 </div>
                               )}
                               {guest.guest_email && (
-                                <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-semibold">
-                                  <Mail className="w-3 h-3 text-slate-500 shrink-0" />
+                                <div className="flex items-center gap-1 justify-end truncate">
+                                  <Mail className="w-2.5 h-2.5 text-slate-500 shrink-0" />
                                   <span className="truncate">{guest.guest_email}</span>
                                 </div>
                               )}
                             </div>
 
                             {/* Check In / Out Dates info */}
-                            <div className="flex justify-between items-center bg-white/5 px-2 py-1.5 rounded-lg border border-white/5 text-[9px]">
+                            <div className="flex justify-between items-center bg-white/5 px-2 py-1 rounded-none border border-white/5 text-[8px]">
                               <div>
                                 <span className="text-slate-500 font-black uppercase block tracking-wider text-[7px]">Entrada</span>
-                                <span className="font-bold text-slate-300">{new Date(guest.check_in_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</span>
+                                <span className="font-bold text-slate-350">{new Date(guest.check_in_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</span>
                               </div>
                               <ArrowRight className="w-3 h-3 text-slate-500 shrink-0" />
                               <div className="text-right">
                                 <span className="text-slate-500 font-black uppercase block tracking-wider text-[7px]">Salida</span>
-                                <span className="font-bold text-slate-300">{new Date(guest.check_out_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</span>
+                                <span className="font-bold text-slate-350">{new Date(guest.check_out_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</span>
                               </div>
                             </div>
 
                             {/* Payment Status Badges & Booking Notes */}
-                            <div className="flex items-center justify-between gap-2 mt-1">
-                              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${
+                            <div className="flex items-center justify-between gap-2 mt-0.5">
+                              <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-wider border ${
                                 guest.payment_status === 'paid' 
                                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
                                   : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -261,7 +293,7 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
 
                               {guest.notes && (
                                 <div 
-                                  className="flex items-center gap-1 text-[8px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/5 max-w-[120px]"
+                                  className="flex items-center gap-1 text-[8px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded-none border border-white/5 max-w-[120px]"
                                   title={guest.notes}
                                 >
                                   <FileText className="w-2.5 h-2.5 text-blue-400 shrink-0" />
@@ -273,11 +305,11 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
                         )}
 
                         {/* Card Actions (Operations flow) */}
-                        <div className="pt-2 flex flex-col gap-2 border-t border-white/5">
+                        <div className="pt-1.5 flex flex-col gap-1.5 border-t border-white/5">
                           {isOccupied && (
                             <button
                               onClick={() => handleCheckOut(room)}
-                              className="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1"
+                              className="w-full py-1 bg-red-600 hover:bg-red-700 text-white rounded-none text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1 cursor-pointer"
                             >
                               Check-out <ArrowRight className="w-3.5 h-3.5" />
                             </button>
@@ -286,7 +318,7 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
                           {isDirty && (
                             <button
                               onClick={() => updateRoomStatus(room.id, 'Cleaning')}
-                              className="w-full py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1"
+                              className="w-full py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-none text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1 cursor-pointer"
                             >
                               Iniciar Limpieza <Play className="w-3 h-3" />
                             </button>
@@ -295,14 +327,14 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
                           {isCleaning && (
                             <button
                               onClick={() => updateRoomStatus(room.id, 'Available')}
-                              className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1"
+                              className="w-full py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-none text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1 cursor-pointer"
                             >
                               Completar Limpieza <CheckCircle2 className="w-3 h-3" />
                             </button>
                           )}
 
                           {/* Options to manually transition rooms to other states */}
-                          <div className="flex justify-between items-center text-[9px] text-slate-500 uppercase font-black tracking-widest mt-1">
+                          <div className="flex justify-between items-center text-[9px] text-slate-500 uppercase font-black tracking-widest mt-0.5">
                             <span>Mover a:</span>
                             <div className="flex gap-1.5">
                               {!isAvailable && (
