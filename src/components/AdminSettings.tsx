@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { hotelRpc } from '../lib/supabase';
 import type { Room } from '../types';
-import { Loader2, KeyRound, Palette, Bed, Save, Plus, Trash2, Mail, Building, Phone, MapPin, Image, Sparkles, X, Calendar } from 'lucide-react';
+import { 
+  Loader2, KeyRound, Palette, Bed, Save, Plus, Trash2, Mail, Building, Phone, MapPin, 
+  Image, Sparkles, X, Calendar, Wifi, Waves, Coffee, Tv, Car, Flame, Wind, Key, Utensils, 
+  Shield, Wine, Bike, Bath
+} from 'lucide-react';
 
 const ROOM_PRESETS = {
   Single: [
@@ -28,6 +32,60 @@ const LANDING_BANNER_PRESETS = [
   { name: 'Boutique Urbano', url: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80' },
   { name: 'Cabaña de Montaña', url: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80' }
 ];
+
+const AVAILABLE_ICONS = [
+  { id: 'Sparkles', name: 'Destacado', component: Sparkles },
+  { id: 'Wifi', name: 'Internet / Wifi', component: Wifi },
+  { id: 'Coffee', name: 'Desayuno / Café', component: Coffee },
+  { id: 'Car', name: 'Estacionamiento / Auto', component: Car },
+  { id: 'Waves', name: 'Piscina / Spa / Jacuzzi', component: Waves },
+  { id: 'Tv', name: 'Televisión / Tv', component: Tv },
+  { id: 'Flame', name: 'Calefacción', component: Flame },
+  { id: 'Wind', name: 'Aire Acondicionado', component: Wind },
+  { id: 'Key', name: 'Cerradura / Llave', component: Key },
+  { id: 'Utensils', name: 'Restaurante / Comida', component: Utensils },
+  { id: 'Shield', name: 'Seguridad', component: Shield },
+  { id: 'Bed', name: 'Cama / Descanso', component: Bed },
+  { id: 'Wine', name: 'Bar / Bebidas', component: Wine },
+  { id: 'Bike', name: 'Bicicleta / Actividades', component: Bike },
+  { id: 'Bath', name: 'Tina / Baño', component: Bath }
+];
+
+const getFeatureLabel = (feature: string) => {
+  if (feature.includes('||')) {
+    return feature.split('||')[0];
+  }
+  return feature;
+};
+
+const getFeatureIcon = (feature: string) => {
+  let iconId = '';
+  let name = feature;
+  if (feature.includes('||')) {
+    const parts = feature.split('||');
+    name = parts[0];
+    iconId = parts[1];
+  }
+  
+  if (iconId) {
+    const found = AVAILABLE_ICONS.find(i => i.id === iconId);
+    if (found) {
+      const IconComponent = found.component;
+      return <IconComponent className="w-4 h-4" />;
+    }
+  }
+  
+  const f = name.toLowerCase();
+  if (f.includes('wifi') || f.includes('internet')) return <Wifi className="w-4 h-4" />;
+  if (f.includes('piscina') || f.includes('alberca') || f.includes('agua') || f.includes('spa') || f.includes('jacuzzi') || f.includes('tina')) return <Waves className="w-4 h-4" />;
+  if (f.includes('desayuno') || f.includes('café') || f.includes('cafe') || f.includes('comida') || f.includes('bar') || f.includes('restaurante')) return <Coffee className="w-4 h-4" />;
+  if (f.includes('tv') || f.includes('cable') || f.includes('netflix') || f.includes('pantalla')) return <Tv className="w-4 h-4" />;
+  if (f.includes('estacionamiento') || f.includes('auto') || f.includes('cochera') || f.includes('parking') || f.includes('vehiculo')) return <Car className="w-4 h-4" />;
+  if (f.includes('aire') || f.includes('clima') || f.includes('wind')) return <Wind className="w-4 h-4" />;
+  if (f.includes('calefac') || f.includes('chimenea') || f.includes('fuego')) return <Flame className="w-4 h-4" />;
+  if (f.includes('llave') || f.includes('domotica') || f.includes('domotizado') || f.includes('key')) return <Key className="w-4 h-4" />;
+  return <Sparkles className="w-4 h-4" />;
+};
 
 interface AdminSettingsProps {
   companyId: string;
@@ -71,6 +129,7 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
   const [bannerUrl, setBannerUrl] = useState('');
   const [features, setFeatures] = useState<string[]>([]);
   const [newFeature, setNewFeature] = useState('');
+  const [newFeatureIcon, setNewFeatureIcon] = useState('Sparkles');
 
   // Form states for new Pricing Rule
   const [pricingRules, setPricingRules] = useState<any[]>([]);
@@ -559,7 +618,7 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
                   </div>
 
                   {/* Features Tag Editor */}
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Servicios y Amenidades</label>
                     <div className="flex gap-2">
                       <input
@@ -570,9 +629,13 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
-                            if (newFeature.trim() && !features.includes(newFeature.trim())) {
-                              setFeatures(prev => [...prev, newFeature.trim()]);
-                              setNewFeature('');
+                            const val = newFeature.trim();
+                            if (val) {
+                              const featureWithIcon = newFeatureIcon !== 'Sparkles' ? `${val}||${newFeatureIcon}` : val;
+                              if (!features.some(f => getFeatureLabel(f) === val)) {
+                                setFeatures(prev => [...prev, featureWithIcon]);
+                                setNewFeature('');
+                              }
                             }
                           }
                         }}
@@ -582,9 +645,13 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (newFeature.trim() && !features.includes(newFeature.trim())) {
-                            setFeatures(prev => [...prev, newFeature.trim()]);
-                            setNewFeature('');
+                          const val = newFeature.trim();
+                          if (val) {
+                            const featureWithIcon = newFeatureIcon !== 'Sparkles' ? `${val}||${newFeatureIcon}` : val;
+                            if (!features.some(f => getFeatureLabel(f) === val)) {
+                              setFeatures(prev => [...prev, featureWithIcon]);
+                              setNewFeature('');
+                            }
                           }
                         }}
                         className="px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-colors"
@@ -592,23 +659,62 @@ export function AdminSettings({ companyId }: AdminSettingsProps) {
                         Añadir
                       </button>
                     </div>
+
+                    {/* Icon Selection Horizontal Scroll */}
+                    <div className="space-y-1.5">
+                      <span className="text-[8px] font-black uppercase text-slate-500 block">Elegir Ícono para este Servicio:</span>
+                      <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-white/10 custom-scrollbar">
+                        {AVAILABLE_ICONS.map((ico) => {
+                          const IconComp = ico.component;
+                          const isSel = newFeatureIcon === ico.id;
+                          return (
+                            <button
+                              key={ico.id}
+                              type="button"
+                              onClick={() => setNewFeatureIcon(ico.id)}
+                              className={`p-2.5 rounded-none border shrink-0 transition-all flex flex-col items-center gap-1 min-w-[50px] cursor-pointer ${
+                                isSel 
+                                  ? 'text-white border-none' 
+                                  : 'bg-white/5 border-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                              }`}
+                              style={{
+                                backgroundColor: isSel ? 'var(--primary, #8b5cf6)' : '',
+                                boxShadow: isSel ? '0 4px 10px var(--primary-shadow)' : ''
+                              }}
+                              title={ico.name}
+                            >
+                              <IconComp className="w-4 h-4" />
+                              <span className="text-[7px] font-black uppercase tracking-wider">{ico.name.split(' ')[0]}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     {/* Tags List */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {features.map((feat, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-1 px-2.5 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-extrabold text-slate-300"
-                        >
-                          <span>{feat}</span>
-                          <button
-                            type="button"
-                            onClick={() => setFeatures(prev => prev.filter(f => f !== feat))}
-                            className="text-slate-500 hover:text-red-400 transition-colors"
+                      {features.map((feat, idx) => {
+                        const label = getFeatureLabel(feat);
+                        const icon = getFeatureIcon(feat);
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2 px-2.5 py-1.5 bg-white/5 border border-white/5 rounded-none text-[10px] font-extrabold text-slate-300"
                           >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                            <div className="text-slate-400 flex items-center justify-center shrink-0">
+                              {icon}
+                            </div>
+                            <span>{label}</span>
+                            <button
+                              type="button"
+                              onClick={() => setFeatures(prev => prev.filter(f => f !== feat))}
+                              className="text-slate-500 hover:text-red-400 transition-colors bg-transparent border-none cursor-pointer p-0"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
                       {features.length === 0 && (
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider py-1">Sin amenidades configuradas.</p>
                       )}
