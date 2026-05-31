@@ -563,8 +563,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400" />
           
           {logoUrl ? (
-            <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center p-2.5 mx-auto mb-6 shadow-md border border-slate-100 overflow-hidden">
-              <img src={logoUrl} alt="Logo Hotel" className="w-full h-full object-contain" />
+            <div className="h-24 w-auto max-w-[200px] flex items-center justify-center p-1 mx-auto mb-6 overflow-hidden">
+              <img src={logoUrl} alt="Logo Hotel" className="h-full w-auto object-contain" />
             </div>
           ) : (
             <div className="w-16 h-16 bg-emerald-500/10 rounded-full border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
@@ -656,7 +656,7 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                 <button 
                   onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
                   className="px-6 py-3 rounded-none text-[10px] font-black uppercase tracking-[0.2em] text-white flex items-center gap-2 transition-all hover:translate-y-[-2px] shadow-lg shadow-black/30 border-none outline-none cursor-pointer"
-                  style={{ backgroundColor: '#8b5cf6' }}
+                  style={{ backgroundColor: themePrimary }}
                 >
                   Reservar Habitación
                   <ArrowRight className="w-4 h-4" />
@@ -932,8 +932,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                                       : 'bg-white/5 text-slate-350 hover:bg-slate-800'
                                   }`}
                                   style={{
-                                    backgroundColor: isSelected ? '#8b5cf6' : '',
-                                    boxShadow: isSelected ? '0 4px 12px rgba(139, 92, 246, 0.3)' : ''
+                                    backgroundColor: isSelected ? themePrimary : '',
+                                    boxShadow: isSelected ? `0 4px 12px ${themePrimary}4d` : ''
                                   }}
                                 >
                                   {isSelected ? 'Seleccionada' : 'Reservar'}
@@ -971,8 +971,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                 </div>
 
                 {logoUrl && (
-                  <div className="w-full flex justify-center py-6 bg-slate-50 rounded-2xl border border-slate-200/60 shadow-sm">
-                    <img src={logoUrl} alt="Logo" className="h-16 max-w-[80%] object-contain" />
+                  <div className="w-full flex justify-center py-8 bg-slate-50 rounded-none border border-slate-200/60 shadow-sm">
+                    <img src={logoUrl} alt="Logo" className="h-28 max-w-[90%] object-contain" />
                   </div>
                 )}
 
@@ -1132,8 +1132,8 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                       disabled={bookingLoading}
                       className="w-full py-4 text-white rounded-none font-black uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg cursor-pointer border-none outline-none"
                       style={{ 
-                        backgroundColor: '#8b5cf6', 
-                        boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)' 
+                        backgroundColor: themePrimary, 
+                        boxShadow: `0 4px 14px ${themePrimary}4d` 
                       }}
                     >
                       {bookingLoading ? (

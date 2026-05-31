@@ -199,6 +199,11 @@ function App() {
         if (!error && data) {
           const setData = Array.isArray(data) ? data[0] : data;
           setLogoUrl(setData?.logo_url || '');
+          
+          // Inyectar dinámicamente las variables de color del tema en el DOM
+          const primaryColor = setData?.theme_primary || '#8b5cf6';
+          document.documentElement.style.setProperty('--primary', primaryColor);
+          document.documentElement.style.setProperty('--primary-shadow', `${primaryColor}33`); // 33 es 20% opacidad en hex
         }
 
         const { data: compData, error: compError } = await hotelRpc.getCompany(companyId);
@@ -220,6 +225,14 @@ function App() {
     };
   }, [companyId]);
 
+  // Actualizador dinámico de Favicon
+  useEffect(() => {
+    const favicon = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (favicon) {
+      favicon.href = logoUrl || '/favicon.svg';
+    }
+  }, [logoUrl]);
+
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col font-sans relative overflow-hidden transition-colors duration-300">
       {/* Background Orbs */}
@@ -230,8 +243,8 @@ function App() {
       <header className="sticky top-0 z-50 bg-black border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
           {logoUrl ? (
-            <div className="w-10 h-10 shrink-0 flex items-center justify-center overflow-hidden">
-              <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+            <div className="h-14 w-auto max-w-[120px] shrink-0 flex items-center justify-center overflow-hidden bg-white/5 p-1 rounded">
+              <img src={logoUrl} alt="Logo" className="h-full w-auto object-contain" />
             </div>
           ) : (
             <div className="w-9 h-9 rounded-none border border-white/30 flex items-center justify-center text-white font-light text-base tracking-widest font-mono shrink-0 select-none">
@@ -414,8 +427,11 @@ function App() {
             {activeView === 'portal' && (
               <button
                 onClick={() => document.getElementById('booking-portal-content')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-6 py-2.5 text-white rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 cursor-pointer shadow-lg shadow-violet-500/20 border-none outline-none"
-                style={{ backgroundColor: '#8b5cf6' }} // Vibrant violet from Image 1
+                className="px-6 py-2.5 text-white rounded-none text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 cursor-pointer shadow-lg border-none outline-none"
+                style={{ 
+                  backgroundColor: 'var(--primary, #8b5cf6)',
+                  boxShadow: '0 4px 14px 0 var(--primary-shadow, rgba(139, 92, 246, 0.2))'
+                }}
               >
                 Reservar
               </button>
@@ -640,7 +656,7 @@ function App() {
             {activeView === 'login' && (
               <div className="max-w-md mx-auto my-12">
                 <div className="glass-card border border-white/5 p-8 relative overflow-hidden shadow-2xl">
-                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600" />
+                  <div className="absolute top-0 left-0 right-0 h-1.5" style={{ backgroundColor: 'var(--primary, #8b5cf6)' }} />
                   
                   <div className="text-center mb-6">
                     <h2 className="text-2xl font-black tracking-tight text-white">Consola Nexus Hotel</h2>
@@ -706,7 +722,11 @@ function App() {
                     <button
                       type="submit"
                       disabled={authLoading}
-                      className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2"
+                      className="w-full py-3.5 text-white rounded-none font-extrabold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 border-none outline-none cursor-pointer hover:brightness-110 active:brightness-95"
+                      style={{ 
+                        backgroundColor: 'var(--primary, #8b5cf6)',
+                        boxShadow: '0 4px 14px var(--primary-shadow, rgba(139, 92, 246, 0.2))'
+                      }}
                     >
                       {authLoading ? 'Procesando...' : isRegister ? 'Registrar Personal' : 'Ingresar'}
                     </button>
@@ -731,7 +751,8 @@ function App() {
                         setIsRegister(!isRegister);
                         setAuthError(null);
                       }}
-                      className="text-blue-400 hover:text-blue-300 font-bold"
+                      className="font-bold bg-transparent border-none cursor-pointer outline-none hover:underline"
+                      style={{ color: 'var(--primary, #8b5cf6)' }}
                     >
                       {isRegister ? '¿Ya tienes cuenta? Inicia Sesión' : '¿Nuevo personal? Regístrate aquí'}
                     </button>
