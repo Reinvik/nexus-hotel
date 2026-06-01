@@ -24,7 +24,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 type ViewMode = 'portal' | 'kanban' | 'calendar' | 'cleaning' | 'admin' | 'login' | 'nexusowner';
-const NEXUS_OWNER_EMAIL = 'ariel.mellag@gmail.com';
+const NEXUS_OWNERS = ['ariel.mellag@gmail.com', 'fariacricardog@gmail.com', 'equipo@belean.cl'];
+const isNexusOwnerEmail = (email?: string) => {
+  return NEXUS_OWNERS.includes(email?.toLowerCase() || '');
+};
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -71,7 +74,7 @@ function App() {
 
   // Fetch all companies when profile changes if user is admin or Ariel
   useEffect(() => {
-    if (profile && (profile.role === 'admin' || profile.email === NEXUS_OWNER_EMAIL)) {
+    if (profile && (profile.role === 'admin' || isNexusOwnerEmail(profile.email))) {
       hotelRpc.getCompanies().then(({ data, error }) => {
         if (!error && data) {
           setCompanies(data);
@@ -360,7 +363,7 @@ function App() {
                   </button>
                 )}
 
-                {profile.email === NEXUS_OWNER_EMAIL && (
+                {isNexusOwnerEmail(profile.email) && (
                   <button
                     onClick={() => setActiveView('nexusowner')}
                     className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 flex items-center gap-1.5 bg-transparent border-none outline-none cursor-pointer ${
@@ -382,7 +385,7 @@ function App() {
         {/* Right controls wrapper with Quick View selector */}
         <div className="flex items-center gap-4">
           {/* Hotel Selector (visible to admin or Ariel Mellag) */}
-          {(profile?.role === 'admin' || profile?.email === NEXUS_OWNER_EMAIL) && companies.length > 0 && (
+          {(profile?.role === 'admin' || isNexusOwnerEmail(profile?.email)) && companies.length > 0 && (
             <div className="hidden md:flex items-center gap-1.5 bg-black px-3 py-2 rounded-none border border-white/10 shadow-sm transition-colors duration-200 hover:border-white/20">
               {logoUrl ? (
                 <div className="w-3.5 h-3.5 shrink-0 rounded-none bg-white/10 flex items-center justify-center p-0.5 overflow-hidden border border-white/10">
@@ -601,7 +604,7 @@ function App() {
               {session && (
                 <div className="flex flex-col gap-3 px-4 py-2 border-t border-white/5 lg:hidden">
                   {/* Selector de Hotel en móvil */}
-                  {(profile?.role === 'admin' || profile?.email === NEXUS_OWNER_EMAIL) && companies.length > 0 && (
+                  {(profile?.role === 'admin' || isNexusOwnerEmail(profile?.email)) && companies.length > 0 && (
                     <div className="flex items-center gap-2 bg-black/40 px-3 py-2 border border-white/10">
                       {logoUrl ? (
                         <div className="w-4 h-4 shrink-0 rounded-none bg-white/10 flex items-center justify-center p-0.5 overflow-hidden border border-white/10">
@@ -692,7 +695,7 @@ function App() {
             className="w-full h-full"
           >
             {/* 0. NEXUS OWNER — Superadmin global */}
-            {activeView === 'nexusowner' && <NexusOwnerDashboard ownerEmail={NEXUS_OWNER_EMAIL} />}
+            {activeView === 'nexusowner' && <NexusOwnerDashboard ownerEmail={profile?.email} />}
 
             {/* 1. PUBLIC BOOKING PORTAL */}
             {activeView === 'portal' && <PublicBookingPortal profile={profile} session={session} />}

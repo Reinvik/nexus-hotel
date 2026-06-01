@@ -138,10 +138,10 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
   const [roomEditType, setRoomEditType] = useState<'Single' | 'Double' | 'Suite' | 'Deluxe'>('Single');
   const [roomSaveLoading, setRoomSaveLoading] = useState(false);
 
-  // Check if current user is admin of selected company or Ariel Mellag
+  // Check if current user is admin of selected company or a Nexus Owner
   const isAdminForThisCompany = 
     (profile?.role === 'admin' && profile?.company_id === selectedCompanyId) || 
-    (profile?.email === 'ariel.mellag@gmail.com');
+    ['ariel.mellag@gmail.com', 'fariacricardog@gmail.com', 'equipo@belean.cl'].includes(profile?.email?.toLowerCase() || '');
 
   // Fetch hotels/companies on load
   useEffect(() => {
