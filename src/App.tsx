@@ -24,7 +24,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 type ViewMode = 'portal' | 'kanban' | 'calendar' | 'cleaning' | 'admin' | 'login' | 'nexusowner';
-const NEXUS_OWNERS = ['ariel.mellag@gmail.com', 'fariacricardog@gmail.com', 'equipo@belean.cl'];
+const NEXUS_OWNERS = ['ariel.mellag@gmail.com', 'fariacricardog@gmail.com', 'equipo@belean.cl', 'nbl@sns.cl'];
 const isNexusOwnerEmail = (email?: string) => {
   return NEXUS_OWNERS.includes(email?.toLowerCase() || '');
 };
