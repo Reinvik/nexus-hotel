@@ -4,7 +4,8 @@ import type { Company } from '../types';
 import {
   Building2, Users, BedDouble, Calendar, TrendingUp,
   PlusCircle, Settings, Globe, Phone, Mail, MapPin,
-  ChevronRight, BarChart3, Activity, Sparkles, RefreshCw
+  ChevronRight, BarChart3, Activity, Sparkles, RefreshCw,
+  Search, UserCheck, UserX, Trash2, UserPlus, Info, Check, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,19 +36,40 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
   const [newHotelCity, setNewHotelCity] = useState('');
   const [creatingHotel, setCreatingHotel] = useState(false);
 
+  // User management states
+  const [activeTab, setActiveTab] = useState<'hotels' | 'users'>('hotels');
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     loadAllHotels();
+    loadProfiles();
   }, [refreshKey]);
+
+  const loadProfiles = async () => {
+    try {
+      const { data, error } = await hotelRpc.getAllProfiles();
+      if (error) throw error;
+      setProfiles(data || []);
+    } catch (err) {
+      console.error('Error loading profiles:', err);
+    }
+  };
 
   const loadAllHotels = async () => {
     setLoading(true);
     try {
-      const { data: companies, error: companiesError } = await hotelRpc.getCompanies();
+      const { data: companiesRes, error: companiesError } = await hotelRpc.getCompanies();
       if (companiesError) throw companiesError;
-      if (!companies) return;
+      if (!companiesRes) return;
+      setCompanies(companiesRes as Company[]);
 
       // Fetch stats for each company in parallel
-      const statsPromises = (companies as any[]).map(async (company: Company) => {
+      const statsPromises = (companiesRes as any[]).map(async (company: Company) => {
         const [roomsRes, bookingsRes, staffRes] = await Promise.all([
           hotelRpc.getRooms(company.id),
           hotelRpc.getBookings(company.id),
@@ -99,6 +121,41 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
     }
   };
 
+  const handleUpdateProfile = async (id: string, name: string, role: string, companyId: string | null, isAuthorized: boolean) => {
+    setUpdatingUserId(id);
+    try {
+      const { error } = await hotelRpc.updateProfileAdmin({ id, name, role, companyId, isAuthorized });
+      if (error) throw error;
+      await loadProfiles();
+    } catch (err: any) {
+      alert('Error al actualizar usuario: ' + err.message);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleDeleteProfile = async (id: string, name: string) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el perfil de ${name}? Esta acción no se puede deshacer.`)) return;
+    setUpdatingUserId(id);
+    try {
+      const { error } = await hotelRpc.deleteProfileAdmin(id);
+      if (error) throw error;
+      await loadProfiles();
+      alert('✅ Usuario eliminado correctamente.');
+    } catch (err: any) {
+      alert('Error al eliminar usuario: ' + err.message);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleCopyInviteLink = () => {
+    const inviteUrl = `${window.location.origin}/?view=login&register=true`;
+    navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const totalRooms = hotelStats.reduce((acc, s) => acc + s.roomCount, 0);
   const totalBookings = hotelStats.reduce((acc, s) => acc + s.activeBookings, 0);
   const avgOccupancy = hotelStats.length > 0
@@ -111,11 +168,11 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+            <div className="w-8 h-8 rounded-none bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
               <Globe className="w-4 h-4 text-white" />
             </div>
             <h1 className="text-xl font-black text-white tracking-tight">Nexus Owner</h1>
-            <span className="text-[9px] bg-amber-500/20 text-amber-400 font-extrabold uppercase px-1.5 py-0.5 rounded tracking-widest border border-amber-500/10">
+            <span className="text-[9px] bg-amber-500/20 text-amber-400 font-extrabold uppercase px-1.5 py-0.5 rounded-none tracking-widest border border-amber-500/10">
               Superadmin
             </span>
           </div>
@@ -126,20 +183,62 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
         <div className="flex items-center gap-2">
           <button
             onClick={() => setRefreshKey(k => k + 1)}
-            className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5"
+            className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-none transition-all border border-white/5 cursor-pointer"
             title="Recargar"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-amber-500/20"
+            onClick={() => {
+              if (activeTab === 'hotels') {
+                setShowCreateModal(true);
+              } else {
+                setShowInviteModal(true);
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-black text-xs uppercase tracking-wider rounded-none transition-all shadow-md shadow-amber-500/20 cursor-pointer"
           >
-            <PlusCircle className="w-4 h-4" />
-            Nuevo Hotel
+            {activeTab === 'hotels' ? (
+              <>
+                <PlusCircle className="w-4 h-4" />
+                Nuevo Hotel
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-4 h-4" />
+                Agregar Miembro
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-white/10">
+        <button
+          onClick={() => setActiveTab('hotels')}
+          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all rounded-none border-b-2 cursor-pointer ${
+            activeTab === 'hotels'
+              ? 'border-amber-500 text-amber-500 bg-white/5 font-black'
+              : 'border-transparent text-slate-400 hover:text-white'
+          }`}
+        >
+          Gestión de Hoteles
+        </button>
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all rounded-none border-b-2 cursor-pointer ${
+            activeTab === 'users'
+              ? 'border-amber-500 text-amber-500 bg-white/5 font-black'
+              : 'border-transparent text-slate-400 hover:text-white'
+          }`}
+        >
+          Gestión de Usuarios
+        </button>
+      </div>
+
+      {activeTab === 'hotels' ? (
+        <>
 
       {/* Global Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -233,9 +332,9 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
 
                 {/* Occupancy bar */}
                 <div className="mt-3">
-                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1 bg-white/5 rounded-none overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-700"
+                      className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-none transition-all duration-700"
                       style={{ width: `${stat.occupancyRate}%` }}
                     />
                   </div>
@@ -275,11 +374,11 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                         <span>{stat.staffCount} miembros de personal</span>
                       </div>
                       <div className="flex gap-2 pt-1">
-                        <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-wider transition-all flex items-center justify-center gap-1.5">
+                        <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-none text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                           <BarChart3 className="w-3 h-3" />
                           Ver Reportes
                         </button>
-                        <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-wider transition-all flex items-center justify-center gap-1.5">
+                        <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-none text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                           <Settings className="w-3 h-3" />
                           Configurar
                         </button>
@@ -297,9 +396,9 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: hotelStats.length * 0.06 }}
             onClick={() => setShowCreateModal(true)}
-            className="glass-card border border-dashed border-white/10 hover:border-amber-500/30 p-5 flex flex-col items-center justify-center gap-3 min-h-[200px] transition-all group cursor-pointer"
+            className="glass-card border border-dashed border-white/10 hover:border-amber-500/30 p-5 flex flex-col items-center justify-center gap-3 min-h-[200px] transition-all group cursor-pointer rounded-none"
           >
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-none bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
               <PlusCircle className="w-6 h-6 text-amber-400" />
             </div>
             <div className="text-center">
@@ -307,6 +406,142 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
               <p className="text-[10px] text-slate-600 mt-0.5">Onboardear nuevo cliente</p>
             </div>
           </motion.button>
+        </div>
+      )}
+        </>
+      ) : (
+        <div className="space-y-4">
+          {/* Search & Action bar */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+            <div className="relative flex-grow max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Buscar usuario por nombre o correo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+              />
+            </div>
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-black text-xs uppercase tracking-wider rounded-none transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              Agregar Miembro
+            </button>
+          </div>
+
+          {/* Users Table */}
+          <div className="overflow-x-auto border border-white/5 rounded-none bg-black/40">
+            <table className="w-full border-collapse text-left text-xs text-slate-350">
+              <thead className="bg-white/5 uppercase font-bold tracking-widest border-b border-white/10 text-slate-450">
+                <tr>
+                  <th className="p-4 text-[10px]">Usuario</th>
+                  <th className="p-4 text-[10px]">Hotel Asignado</th>
+                  <th className="p-4 text-[10px]">Rol</th>
+                  <th className="p-4 text-[10px]">Acceso</th>
+                  <th className="p-4 text-[10px] text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {profiles
+                  .filter(p => {
+                    const term = searchTerm.toLowerCase();
+                    return (
+                      p.name?.toLowerCase().includes(term) ||
+                      p.email?.toLowerCase().includes(term)
+                    );
+                  })
+                  .map((p) => {
+                    const isUpdating = updatingUserId === p.id;
+                    return (
+                      <tr key={p.id} className="hover:bg-white/2 transition-colors">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-black rounded-none text-sm uppercase shrink-0">
+                              {p.name ? p.name.substring(0, 2) : p.email.substring(0, 2)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-extrabold text-white leading-none mb-1.5 truncate">{p.name || 'Sin Nombre'}</p>
+                              <p className="text-[10px] text-slate-500 truncate leading-none">{p.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <select
+                            value={p.company_id || ''}
+                            disabled={isUpdating}
+                            onChange={(e) => handleUpdateProfile(p.id, p.name || '', p.role, e.target.value || null, p.is_authorized)}
+                            className="bg-[#131c2e] border border-white/5 text-xs text-white rounded-none p-2.5 outline-none w-full max-w-[220px] focus:border-amber-500/30 transition-colors cursor-pointer"
+                          >
+                            <option value="">Sin Asignar / Externo</option>
+                            {companies.map(c => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-4">
+                          <select
+                            value={p.role}
+                            disabled={isUpdating}
+                            onChange={(e) => handleUpdateProfile(p.id, p.name || '', e.target.value, p.company_id, p.is_authorized)}
+                            className="bg-[#131c2e] border border-white/5 text-xs text-white rounded-none p-2.5 outline-none w-full max-w-[150px] focus:border-amber-500/30 transition-colors cursor-pointer"
+                          >
+                            <option value="admin">Administrador</option>
+                            <option value="receptionist">Recepcionista</option>
+                            <option value="cleaner">Camarera</option>
+                          </select>
+                        </td>
+                        <td className="p-4">
+                          <button
+                            disabled={isUpdating}
+                            onClick={() => handleUpdateProfile(p.id, p.name || '', p.role, p.company_id, !p.is_authorized)}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-none font-extrabold text-[9px] uppercase tracking-widest border transition-all cursor-pointer ${
+                              p.is_authorized
+                                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25'
+                                : 'bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25'
+                            }`}
+                          >
+                            {p.is_authorized ? (
+                              <>
+                                <UserCheck className="w-3.5 h-3.5" />
+                                Autorizado
+                              </>
+                            ) : (
+                              <>
+                                <UserX className="w-3.5 h-3.5" />
+                                Bloqueado
+                              </>
+                            )}
+                          </button>
+                        </td>
+                        <td className="p-4 text-right">
+                          <button
+                            disabled={isUpdating}
+                            onClick={() => handleDeleteProfile(p.id, p.name || p.email)}
+                            className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 border border-transparent rounded-none transition-all cursor-pointer"
+                            title="Eliminar Usuario"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                {profiles.filter(p => {
+                  const term = searchTerm.toLowerCase();
+                  return p.name?.toLowerCase().includes(term) || p.email?.toLowerCase().includes(term);
+                }).length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-slate-550 font-bold uppercase tracking-wider text-[10px]">
+                      No se encontraron usuarios.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -324,12 +559,12 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-md glass-card border border-white/10 overflow-hidden shadow-2xl"
+              className="w-full max-w-md glass-card border border-white/10 overflow-hidden shadow-2xl rounded-none"
             >
               <div className="h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/20 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-none bg-amber-500/20 border border-amber-500/20 flex items-center justify-center">
                     <Sparkles className="w-4.5 h-4.5 text-amber-400" style={{ width: '18px', height: '18px' }} />
                   </div>
                   <div>
@@ -354,7 +589,7 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                         placeholder={field.placeholder}
                         value={field.value}
                         onChange={(e) => field.setter(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-xl text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+                        className="w-full px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
                       />
                     </div>
                   ))}
@@ -363,19 +598,109 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                     <button
                       type="button"
                       onClick={() => setShowCreateModal(false)}
-                      className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                      className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 rounded-none text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={creatingHotel}
-                      className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-black rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                      className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-black rounded-none text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
                     >
                       {creatingHotel ? 'Creando...' : 'Crear Hotel'}
                     </button>
                   </div>
                 </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Invite/Add Member Modal */}
+      <AnimatePresence>
+        {showInviteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            onClick={(e) => e.target === e.currentTarget && setShowInviteModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md glass-card border border-white/10 overflow-hidden shadow-2xl rounded-none"
+            >
+              <div className="h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-none bg-amber-500/20 border border-amber-500/20 flex items-center justify-center">
+                      <UserPlus className="w-4.5 h-4.5 text-amber-400" style={{ width: '18px', height: '18px' }} />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-black text-white">Agregar Miembro</h2>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Flujo de Onboarding</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowInviteModal(false)}
+                    className="p-1 text-slate-500 hover:text-white bg-transparent border-none outline-none cursor-pointer"
+                  >
+                    <X className="w-4.5 h-4.5" />
+                  </button>
+                </div>
+
+                <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-none space-y-2 text-xs leading-relaxed text-slate-300">
+                  <div className="flex items-start gap-2.5">
+                    <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-extrabold text-white uppercase tracking-wider text-[10px] mb-1">Seguridad en Accesos</p>
+                      <p>
+                        Por motivos de privacidad y seguridad, cada colaborador debe crear sus propias credenciales. Sigue estos simples pasos para sumarlo al equipo:
+                      </p>
+                    </div>
+                  </div>
+                  <ol className="list-decimal list-inside pl-1 space-y-1 text-slate-400 mt-2 font-medium">
+                    <li>Copia el enlace de registro de personal de abajo.</li>
+                    <li>Compártelo con el nuevo integrante.</li>
+                    <li>Una vez que se registre con su correo y clave, aparecerá inmediatamente en esta lista.</li>
+                    <li>Desde aquí podrás habilitar su acceso y asignarle su respectivo hotel y rol de trabajo.</li>
+                  </ol>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Enlace de Registro</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${window.location.origin}/?view=login&register=true`}
+                      className="flex-grow px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-mono text-[10px] outline-none select-all"
+                    />
+                    <button
+                      onClick={handleCopyInviteLink}
+                      className="px-4 bg-amber-500 hover:bg-amber-600 text-black font-black text-xs uppercase tracking-wider rounded-none transition-all cursor-pointer flex items-center justify-center min-w-[90px]"
+                    >
+                      {copied ? (
+                        <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Copiado</span>
+                      ) : (
+                        'Copiar'
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={() => setShowInviteModal(false)}
+                    className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 rounded-none text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    Entendido
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

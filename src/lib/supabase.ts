@@ -214,4 +214,22 @@ export const hotelRpc = {
 
   deletePricingRule: (ruleId: string) =>
     supabase.rpc('hotel_delete_pricing_rule', { p_rule_id: ruleId }),
+
+  // User Management (Nexus Owner / Superadmin)
+  getAllProfiles: () =>
+    supabase.rpc('hotel_get_all_profiles'),
+
+  updateProfileAdmin: (params: {
+    id: string; name: string; role: string; companyId: string | null; isAuthorized: boolean;
+  }) =>
+    supabase.rpc('hotel_update_profile_admin', {
+      p_id: params.id,
+      p_name: params.name,
+      p_role: params.role,
+      p_company_id: params.companyId,
+      p_is_authorized: params.isAuthorized,
+    }),
+
+  deleteProfileAdmin: (userId: string) =>
+    supabase.rpc('hotel_delete_profile_admin', { p_id: userId }),
 };
