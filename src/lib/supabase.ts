@@ -232,4 +232,16 @@ export const hotelRpc = {
 
   deleteProfileAdmin: (userId: string) =>
     supabase.rpc('hotel_delete_profile_admin', { p_id: userId }),
+
+  createUserAdmin: (params: {
+    email: string; password: string; name: string; role: string; companyId: string | null; isAuthorized: boolean;
+  }) =>
+    supabase.rpc('hotel_create_user_admin', {
+      p_email: params.email,
+      p_password: params.password,
+      p_name: params.name,
+      p_role: params.role,
+      p_company_id: params.companyId,
+      p_is_authorized: params.isAuthorized,
+    }),
 };

@@ -5,7 +5,7 @@ import {
   Building2, Users, BedDouble, Calendar, TrendingUp,
   PlusCircle, Settings, Globe, Phone, Mail, MapPin,
   ChevronRight, BarChart3, Activity, Sparkles, RefreshCw,
-  Search, UserCheck, UserX, Trash2, UserPlus, Info, Check, X
+  Search, UserCheck, UserX, Trash2, UserPlus, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,7 +43,15 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
   const [searchTerm, setSearchTerm] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+
+  // New user form states
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('Nexus1234!');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserRole, setNewUserRole] = useState('receptionist');
+  const [newUserCompanyId, setNewUserCompanyId] = useState('');
+  const [newUserAuthorized, setNewUserAuthorized] = useState(true);
+  const [creatingUser, setCreatingUser] = useState(false);
 
   useEffect(() => {
     loadAllHotels();
@@ -149,11 +157,47 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
     }
   };
 
-  const handleCopyInviteLink = () => {
-    const inviteUrl = `${window.location.origin}/?view=login&register=true`;
-    navigator.clipboard.writeText(inviteUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCreateUserAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserEmail || !newUserPassword || !newUserName || !newUserCompanyId) {
+      alert('Por favor, rellene todos los campos requeridos (*).');
+      return;
+    }
+    setCreatingUser(true);
+    try {
+      const { data, error } = await hotelRpc.createUserAdmin({
+        email: newUserEmail,
+        password: newUserPassword,
+        name: newUserName,
+        role: newUserRole,
+        companyId: newUserCompanyId || null,
+        isAuthorized: newUserAuthorized
+      });
+
+      if (error) throw error;
+
+      const res = Array.isArray(data) ? data[0] : data;
+      if (res && res.success === false) {
+        throw new Error(res.message);
+      }
+
+      alert(`✅ Usuario ${newUserName} creado exitosamente con la contraseña especificada.`);
+      setShowInviteModal(false);
+
+      // Limpiar formulario
+      setNewUserEmail('');
+      setNewUserPassword('Nexus1234!');
+      setNewUserName('');
+      setNewUserRole('receptionist');
+      setNewUserCompanyId('');
+      setNewUserAuthorized(true);
+
+      await loadProfiles();
+    } catch (err: any) {
+      alert('Error al crear usuario: ' + err.message);
+    } finally {
+      setCreatingUser(false);
+    }
   };
 
   const totalRooms = hotelStats.reduce((acc, s) => acc + s.roomCount, 0);
@@ -617,7 +661,7 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
         )}
       </AnimatePresence>
 
-      {/* Invite/Add Member Modal */}
+      {/* Invite/Add Member Modal -> Formulario de creación de usuario */}
       <AnimatePresence>
         {showInviteModal && (
           <motion.div
@@ -641,8 +685,8 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                       <UserPlus className="w-4.5 h-4.5 text-amber-400" style={{ width: '18px', height: '18px' }} />
                     </div>
                     <div>
-                      <h2 className="text-base font-black text-white">Agregar Miembro</h2>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Flujo de Onboarding</p>
+                      <h2 className="text-base font-black text-white">Nuevo Miembro</h2>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Creación de usuario administrativa</p>
                     </div>
                   </div>
                   <button
@@ -653,54 +697,102 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                   </button>
                 </div>
 
-                <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-none space-y-2 text-xs leading-relaxed text-slate-300">
-                  <div className="flex items-start gap-2.5">
-                    <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-extrabold text-white uppercase tracking-wider text-[10px] mb-1">Seguridad en Accesos</p>
-                      <p>
-                        Por motivos de privacidad y seguridad, cada colaborador debe crear sus propias credenciales. Sigue estos simples pasos para sumarlo al equipo:
-                      </p>
-                    </div>
-                  </div>
-                  <ol className="list-decimal list-inside pl-1 space-y-1 text-slate-400 mt-2 font-medium">
-                    <li>Copia el enlace de registro de personal de abajo.</li>
-                    <li>Compártelo con el nuevo integrante.</li>
-                    <li>Una vez que se registre con su correo y clave, aparecerá inmediatamente en esta lista.</li>
-                    <li>Desde aquí podrás habilitar su acceso y asignarle su respectivo hotel y rol de trabajo.</li>
-                  </ol>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Enlace de Registro</label>
-                  <div className="flex gap-2">
+                <form onSubmit={handleCreateUserAdmin} className="space-y-3.5">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Nombre Completo *</label>
                     <input
                       type="text"
-                      readOnly
-                      value={`${window.location.origin}/?view=login&register=true`}
-                      className="flex-grow px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-mono text-[10px] outline-none select-all"
+                      required
+                      placeholder="Ej: Juan Pérez"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
                     />
-                    <button
-                      onClick={handleCopyInviteLink}
-                      className="px-4 bg-amber-500 hover:bg-amber-600 text-black font-black text-xs uppercase tracking-wider rounded-none transition-all cursor-pointer flex items-center justify-center min-w-[90px]"
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Correo Electrónico *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="juan@hotel.com"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Contraseña Temporal *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Clave para iniciar sesión"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Rol inicial</label>
+                      <select
+                        value={newUserRole}
+                        onChange={(e) => setNewUserRole(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors cursor-pointer"
+                      >
+                        <option value="receptionist">Recepcionista</option>
+                        <option value="admin">Administrador</option>
+                        <option value="cleaner">Camarera</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Acceso inicial</label>
+                      <select
+                        value={newUserAuthorized ? 'true' : 'false'}
+                        onChange={(e) => setNewUserAuthorized(e.target.value === 'true')}
+                        className="w-full px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors cursor-pointer"
+                      >
+                        <option value="true">Autorizado</option>
+                        <option value="false">Bloqueado</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Hotel Asignado *</label>
+                    <select
+                      required
+                      value={newUserCompanyId}
+                      onChange={(e) => setNewUserCompanyId(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-[#131c2e] border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors cursor-pointer"
                     >
-                      {copied ? (
-                        <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Copiado</span>
-                      ) : (
-                        'Copiar'
-                      )}
+                      <option value="" disabled>Selecciona un Hotel</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowInviteModal(false)}
+                      className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 rounded-none text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={creatingUser}
+                      className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-black rounded-none text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      {creatingUser ? 'Creando...' : 'Crear Usuario'}
                     </button>
                   </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    onClick={() => setShowInviteModal(false)}
-                    className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 rounded-none text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
-                  >
-                    Entendido
-                  </button>
-                </div>
+                </form>
               </div>
             </motion.div>
           </motion.div>
