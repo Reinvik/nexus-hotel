@@ -243,7 +243,7 @@ function App() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
 
       {/* Main Header / Top Navbar */}
-      <header className="sticky top-0 z-50 bg-black border-b border-white/10 px-4 py-3 md:px-6 md:py-4 flex items-center justify-between shadow-xl">
+      <header className="sticky top-0 z-50 bg-black border-b border-white/10 px-3 py-2 md:px-6 md:py-4 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
           {logoUrl ? (
             <div className="h-14 w-auto max-w-[120px] shrink-0 flex items-center justify-center overflow-hidden bg-white/5 p-1 rounded">
@@ -684,7 +684,7 @@ function App() {
       </AnimatePresence>
 
       {/* Main Container */}
-      <main className="flex-1 px-4 md:px-8 pt-20 md:pt-24 pb-16 relative z-10">
+      <main className="flex-1 px-3 sm:px-4 md:px-8 pt-16 sm:pt-20 md:pt-24 pb-16 relative z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeView}
@@ -714,7 +714,7 @@ function App() {
 
             {/* 6. STAFF LOGIN CARD */}
             {activeView === 'login' && (
-              <div className="max-w-md mx-auto my-12">
+              <div className="max-w-md mx-auto my-4 sm:my-12">
                 <div className="glass-card border border-white/5 p-8 relative overflow-hidden shadow-2xl">
                   <div className="absolute top-0 left-0 right-0 h-1.5" style={{ backgroundColor: 'var(--primary, #8b5cf6)' }} />
                   

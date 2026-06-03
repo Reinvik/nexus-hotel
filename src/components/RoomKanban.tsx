@@ -167,18 +167,19 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="overflow-x-auto -mx-3 px-3 pb-2 custom-scrollbar">
+        <div className="flex lg:grid lg:grid-cols-5 gap-3 min-w-max lg:min-w-0">
           {STATUS_COLUMNS.map(col => {
             const colRooms = rooms.filter(r => r.status === col.key);
 
             return (
               <div 
                 key={col.key}
-                className={`rounded-none border border-white/5 p-3 flex flex-col min-h-[500px] ${col.bg}`}
+                className={`rounded-none border border-white/5 p-2 sm:p-3 flex flex-col min-h-[500px] w-[260px] sm:w-[300px] lg:w-auto shrink-0 lg:shrink ${col.bg}`}
               >
                 {/* Column Title */}
-                <div className="flex justify-between items-center border-b border-white/5 pb-3 mb-4">
-                  <span className={`text-xs font-black uppercase tracking-wider ${col.color}`}>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2 sm:pb-3 mb-3 sm:mb-4">
+                  <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${col.color}`}>
                     {col.label}
                   </span>
                   <span className="px-2 py-0.5 bg-white/5 rounded-md text-[10px] font-black text-slate-400">
@@ -388,6 +389,7 @@ export function RoomKanban({ companyId }: RoomKanbanProps) {
               </div>
             );
           })}
+        </div>
         </div>
       )}
     </div>

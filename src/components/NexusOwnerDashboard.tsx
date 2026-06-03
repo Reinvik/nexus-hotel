@@ -478,14 +478,14 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
 
           {/* Users Table */}
           <div className="overflow-x-auto border border-white/5 rounded-none bg-black/40">
-            <table className="w-full border-collapse text-left text-xs text-slate-350">
+            <table className="w-full border-collapse text-left text-xs text-slate-350 min-w-[600px]">
               <thead className="bg-white/5 uppercase font-bold tracking-widest border-b border-white/10 text-slate-450">
                 <tr>
-                  <th className="p-4 text-[10px]">Usuario</th>
-                  <th className="p-4 text-[10px]">Hotel Asignado</th>
-                  <th className="p-4 text-[10px]">Rol</th>
-                  <th className="p-4 text-[10px]">Acceso</th>
-                  <th className="p-4 text-[10px] text-right">Acciones</th>
+                  <th className="p-2 sm:p-4 text-[10px]">Usuario</th>
+                  <th className="p-2 sm:p-4 text-[10px]">Hotel Asignado</th>
+                  <th className="p-2 sm:p-4 text-[10px]">Rol</th>
+                  <th className="p-2 sm:p-4 text-[10px]">Acceso</th>
+                  <th className="p-2 sm:p-4 text-[10px] text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -501,7 +501,7 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                     const isUpdating = updatingUserId === p.id;
                     return (
                       <tr key={p.id} className="hover:bg-white/2 transition-colors">
-                        <td className="p-4">
+                        <td className="p-2 sm:p-4">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-black rounded-none text-sm uppercase shrink-0">
                               {p.name ? p.name.substring(0, 2) : p.email.substring(0, 2)}
@@ -512,7 +512,7 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                             </div>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2 sm:p-4">
                           <select
                             value={p.company_id || ''}
                             disabled={isUpdating}
@@ -525,7 +525,7 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                             ))}
                           </select>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2 sm:p-4">
                           <select
                             value={p.role}
                             disabled={isUpdating}
@@ -537,7 +537,7 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                             <option value="cleaner">Camarera</option>
                           </select>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2 sm:p-4">
                           <button
                             disabled={isUpdating}
                             onClick={() => handleUpdateProfile(p.id, p.name || '', p.role, p.company_id, !p.is_authorized)}
@@ -560,7 +560,7 @@ export function NexusOwnerDashboard({ ownerEmail: _ownerEmail }: NexusOwnerDashb
                             )}
                           </button>
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="p-2 sm:p-4 text-right">
                           <button
                             disabled={isUpdating}
                             onClick={() => handleDeleteProfile(p.id, p.name || p.email)}
