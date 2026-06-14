@@ -326,3 +326,13 @@ main .bg-slate-500\/5 {
   border-color: rgba(100, 116, 139, 0.15) !important;
 }
 
+/* visores y escaners */
+@keyframes scanner-laser {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(270px); }
+}
+
+.animate-scanner-laser {
+  animation: scanner-laser 3s infinite ease-in-out;
+}
+

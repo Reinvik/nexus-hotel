@@ -24,6 +24,53 @@ interface RoomServiceSession {
   table_number?: string;
 }
 
+const DISH_IMAGES: Record<string, string> = {
+  'empanaditas de queso': 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=400&auto=format&fit=crop',
+  'ceviche mixto': 'https://images.unsplash.com/photo-1535400255456-984241443b27?q=80&w=400&auto=format&fit=crop',
+  'lomo a lo pobre': 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?q=80&w=400&auto=format&fit=crop',
+  'salmón grillado con puré': 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=400&auto=format&fit=crop',
+  'fettuccine al pesto': 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?q=80&w=400&auto=format&fit=crop',
+  'torta tres leches': 'https://images.unsplash.com/photo-1535141192574-5d4897c13636?q=80&w=400&auto=format&fit=crop',
+  'mousse de chocolate': 'https://images.unsplash.com/photo-1541795795328-f073b763494e?q=80&w=400&auto=format&fit=crop',
+  'pisco sour peruano': 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=400&auto=format&fit=crop',
+  'jugo natural de frambuesa': 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?q=80&w=400&auto=format&fit=crop',
+  'bebida lata (coca-cola)': 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=400&auto=format&fit=crop'
+};
+
+const getDishImageFallback = (name: string, dbUrl?: string | null) => {
+  if (dbUrl) return dbUrl;
+  const key = name.toLowerCase().trim();
+  for (const [dishName, url] of Object.entries(DISH_IMAGES)) {
+    if (key.includes(dishName) || dishName.includes(key)) {
+      return url;
+    }
+  }
+  return 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=400&auto=format&fit=crop';
+};
+
+const playBeep = () => {
+  try {
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    
+    oscillator.start();
+    setTimeout(() => {
+      oscillator.stop();
+      audioCtx.close();
+    }, 150);
+  } catch (e) {
+    console.log('Error de AudioContext:', e);
+  }
+};
+
 export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalProps) {
   // Session states
   const [session, setSession] = useState<RoomServiceSession | null>(null);
@@ -33,6 +80,7 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
   const [tableNumber, setTableNumber] = useState('1');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [scanningQr, setScanningQr] = useState(false);
 
   // Menu states
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -60,7 +108,29 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
   const [tempItemNote, setTempItemNote] = useState('');
 
   useEffect(() => {
-    // Check if session exists in sessionStorage
+    // 1. Detectar si hay parámetro de mesa en la URL (ej: ?table=5 o ?mesa=5)
+    const params = new URLSearchParams(window.location.search);
+    const tableParam = params.get('table') || params.get('mesa');
+    if (tableParam) {
+      const activeSession: RoomServiceSession = {
+        is_table: true,
+        table_number: tableParam
+      };
+      setSession(activeSession);
+      sessionStorage.setItem('nexus_room_service_session', JSON.stringify(activeSession));
+      setAccessMode('table');
+      setPaymentMethod('pending');
+      
+      // Limpiar parámetros para un refresh limpio
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // Emitir bip de éxito
+      playBeep();
+      return;
+    }
+
+    // 2. Cargar sesión previa si existe
     const saved = sessionStorage.getItem('nexus_room_service_session');
     if (saved) {
       try {
@@ -76,6 +146,19 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
       }
     }
   }, []);
+
+  const handleSimulatedQrScan = (table: string) => {
+    playBeep();
+    const activeSession: RoomServiceSession = {
+      is_table: true,
+      table_number: table
+    };
+    setSession(activeSession);
+    sessionStorage.setItem('nexus_room_service_session', JSON.stringify(activeSession));
+    setScanningQr(false);
+    setAccessMode('table');
+    setPaymentMethod('pending');
+  };
 
   useEffect(() => {
     if (session && companyId) {
@@ -293,6 +376,66 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
 
   // Login Form View
   if (!session) {
+    if (scanningQr) {
+      return (
+        <div className="max-w-md mx-auto my-6 sm:my-12 px-4">
+          <div className="glass-card border border-white/5 p-8 relative overflow-hidden shadow-2xl bg-[#090e17] rounded-none text-center">
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500" />
+            
+            <div className="flex items-center gap-2 mb-6 text-left">
+              <button 
+                onClick={() => setScanningQr(false)}
+                className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/5 text-slate-450 hover:text-white cursor-pointer rounded-none transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Atrás</span>
+            </div>
+
+            <div className="mb-6">
+              <h2 className="text-md font-black text-white uppercase tracking-wider">Escaneo de Código QR</h2>
+              <p className="text-[9px] text-slate-400 mt-0.5 uppercase font-bold tracking-widest">Apunte la cámara a la mesa</p>
+            </div>
+
+            {/* Caja que emula la cámara activa */}
+            <div className="w-full aspect-square max-w-[280px] mx-auto bg-black/80 border border-white/10 relative overflow-hidden flex items-center justify-center mb-6">
+              {/* Esquinas del visor de escaneo */}
+              <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-amber-500" />
+              <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-amber-500" />
+              <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-amber-500" />
+              <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-amber-500" />
+
+              {/* Línea láser animada */}
+              <div className="absolute left-0 right-0 h-0.5 bg-amber-500/80 shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-scanner-laser" />
+
+              {/* Simulación visual de cámara activa en modo oscuro */}
+              <div className="text-center space-y-2 px-6 z-10">
+                <Loader2 className="w-8 h-8 text-amber-500/40 animate-spin mx-auto" />
+                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Buscando código QR...</p>
+              </div>
+            </div>
+
+            {/* Panel de simulación interactivo para depuración */}
+            <div className="space-y-3 p-4 bg-white/5 border border-white/5 rounded-none text-left">
+              <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest text-center mb-1">Simulador de Códigos QR Físicos</p>
+              <p className="text-[9px] text-slate-400 leading-relaxed text-center mb-3">En un restaurante real, el cliente sólo escanea el código en su mesa. Selecciona una mesa abajo para simular el escaneo:</p>
+              <div className="grid grid-cols-5 gap-1.5">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => handleSimulatedQrScan(String(n))}
+                    className="py-1.5 bg-black/45 hover:bg-amber-500 hover:text-black border border-white/5 text-slate-300 font-mono text-xs font-bold transition-all cursor-pointer rounded-none"
+                  >
+                    M{n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="max-w-md mx-auto my-6 sm:my-12 px-4">
         <div className="glass-card border border-white/5 p-8 relative overflow-hidden shadow-2xl bg-[#090e17] rounded-none">
@@ -329,6 +472,17 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
                     <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-all group-hover:translate-x-1" />
                   </div>
                   <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">Ordena desde tu mesa actual. Puedes pagar directo al mesero/caja o bien cargar a tu habitación.</p>
+                </button>
+
+                <button
+                  onClick={() => setScanningQr(true)}
+                  className="w-full p-4 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500 text-left transition-all rounded-none group cursor-pointer flex items-center justify-between"
+                >
+                  <div>
+                    <span className="text-xs font-black text-amber-500 uppercase tracking-wider">Escanear Código QR de Mesa</span>
+                    <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">Apunte con la cámara del celular al código QR pegado en su mesa para iniciar el pedido al instante.</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-amber-500 group-hover:translate-x-1 transition-all shrink-0" />
                 </button>
               </div>
             </div>
@@ -545,50 +699,62 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredItems.map((item) => {
                 const inCart = cart.find(ci => ci.menuItem.id === item.id);
+                const imageUrl = getDishImageFallback(item.name, item.image_url);
                 return (
-                  <div key={item.id} className="glass-card border border-white/5 bg-black/30 p-5 flex flex-col justify-between rounded-none">
-                    <div>
-                      <h3 className="text-sm font-extrabold text-white tracking-tight uppercase mb-1">{item.name}</h3>
-                      <p className="text-[11px] text-slate-400 leading-relaxed mb-4">{item.description || 'Delicioso plato preparado al instante por nuestro chef.'}</p>
-                    </div>
+                  <div key={item.id} className="glass-card border border-white/5 bg-black/30 flex flex-col sm:flex-row rounded-none overflow-hidden hover:border-amber-500/20 transition-all duration-300">
+                    {imageUrl && (
+                      <div className="w-full sm:w-28 h-36 sm:h-auto shrink-0 relative overflow-hidden bg-slate-900 border-b sm:border-b-0 sm:border-r border-white/5">
+                        <img 
+                          src={imageUrl} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                        />
+                      </div>
+                    )}
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="text-sm font-extrabold text-white tracking-tight uppercase mb-1">{item.name}</h3>
+                        <p className="text-[11px] text-slate-400 leading-relaxed mb-4">{item.description || 'Delicioso plato preparado al instante por nuestro chef.'}</p>
+                      </div>
 
-                    <div className="flex justify-between items-center border-t border-white/5 pt-4 mt-auto">
-                      <span className="text-sm font-black text-amber-500 font-mono">
-                        ${Number(item.price).toLocaleString('es-CL')}
-                      </span>
-                      
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleOpenNoteModal(item)}
-                          className="px-2.5 py-1.5 border border-white/10 hover:border-amber-500/30 text-[10px] text-slate-400 hover:text-amber-500 font-bold uppercase tracking-wider rounded-none cursor-pointer transition-colors"
-                        >
-                          {inCart && inCart.notes ? 'Ver Nota' : 'Nota'}
-                        </button>
+                      <div className="flex justify-between items-center border-t border-white/5 pt-4 mt-auto">
+                        <span className="text-sm font-black text-amber-500 font-mono">
+                          ${Number(item.price).toLocaleString('es-CL')}
+                        </span>
                         
-                        {inCart ? (
-                          <div className="flex items-center bg-white/5 border border-white/5 rounded-none">
-                            <button
-                              onClick={() => updateQuantity(item.id, -1)}
-                              className="p-1.5 text-slate-400 hover:text-white cursor-pointer"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="px-2.5 text-xs font-black text-white font-mono">{inCart.quantity}</span>
-                            <button
-                              onClick={() => updateQuantity(item.id, 1)}
-                              className="p-1.5 text-slate-400 hover:text-white cursor-pointer"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
+                        <div className="flex items-center gap-1.5">
                           <button
-                            onClick={() => addToCart(item)}
-                            className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-widest rounded-none cursor-pointer transition-colors"
+                            onClick={() => handleOpenNoteModal(item)}
+                            className="px-2.5 py-1.5 border border-white/10 hover:border-amber-500/30 text-[10px] text-slate-400 hover:text-amber-500 font-bold uppercase tracking-wider rounded-none cursor-pointer transition-colors"
                           >
-                            Agregar
+                            {inCart && inCart.notes ? 'Ver Nota' : 'Nota'}
                           </button>
-                        )}
+                          
+                          {inCart ? (
+                            <div className="flex items-center bg-white/5 border border-white/5 rounded-none">
+                              <button
+                                onClick={() => updateQuantity(item.id, -1)}
+                                className="p-1.5 text-slate-400 hover:text-white cursor-pointer"
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="px-2.5 text-xs font-black text-white font-mono">{inCart.quantity}</span>
+                              <button
+                                onClick={() => updateQuantity(item.id, 1)}
+                                className="p-1.5 text-slate-400 hover:text-white cursor-pointer"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => addToCart(item)}
+                              className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-widest rounded-none cursor-pointer transition-colors"
+                            >
+                              Agregar
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
