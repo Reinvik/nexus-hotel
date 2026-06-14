@@ -298,7 +298,7 @@ function App() {
               onClick={() => setActiveView('room_service')}
               className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-500 hover:text-amber-400 transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
             >
-              Servicio Habitación
+              Restaurante
             </button>
             <button
               onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
@@ -570,7 +570,7 @@ function App() {
                       onClick={() => { setActiveView('room_service'); setMobileMenuOpen(false); }}
                       className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-amber-500 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
                     >
-                      Servicio Habitación
+                      Restaurante
                     </button>
                     <button
                       onClick={() => { document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'end' }); setMobileMenuOpen(false); }}

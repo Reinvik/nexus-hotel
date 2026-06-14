@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { hotelRpc } from '../lib/supabase';
 import type { MenuCategory, MenuItem } from '../types';
 import { 
-  Utensils, Loader2, LogOut, ShoppingBag, Plus, Minus, ArrowRight, User, Hash, Lock, CheckCircle2
+  Utensils, Loader2, LogOut, ShoppingBag, Plus, Minus, ArrowRight, User, Hash, Lock, CheckCircle2, ArrowLeft
 } from 'lucide-react';
 
 interface PublicRoomServicePortalProps {
@@ -16,17 +16,21 @@ interface CartItem {
 }
 
 interface RoomServiceSession {
-  booking_id: string;
-  room_id: string;
-  guest_name: string;
-  room_number: string;
+  booking_id?: string;
+  room_id?: string;
+  guest_name?: string;
+  room_number?: string;
+  is_table?: boolean;
+  table_number?: string;
 }
 
 export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalProps) {
   // Session states
   const [session, setSession] = useState<RoomServiceSession | null>(null);
+  const [accessMode, setAccessMode] = useState<'select' | 'room' | 'table'>('select');
   const [roomNumber, setRoomNumber] = useState('');
   const [guestRut, setGuestRut] = useState('');
+  const [tableNumber, setTableNumber] = useState('1');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -45,6 +49,12 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [lastOrderNumber, setLastOrderNumber] = useState('');
 
+  // States for table-room validation (when at a table but charging to a room)
+  const [chargeRoomNumber, setChargeRoomNumber] = useState('');
+  const [chargeGuestRut, setChargeGuestRut] = useState('');
+  const [chargeError, setChargeError] = useState('');
+  const [validatingCharge, setValidatingCharge] = useState(false);
+
   // Item note modal helper
   const [noteModalItem, setNoteModalItem] = useState<MenuItem | null>(null);
   const [tempItemNote, setTempItemNote] = useState('');
@@ -54,7 +64,13 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
     const saved = sessionStorage.getItem('nexus_room_service_session');
     if (saved) {
       try {
-        setSession(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setSession(parsed);
+        if (parsed.is_table) {
+          setAccessMode('table');
+        } else {
+          setAccessMode('room');
+        }
       } catch (e) {
         sessionStorage.removeItem('nexus_room_service_session');
       }
@@ -101,7 +117,8 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
           booking_id: results[0].booking_id,
           room_id: results[0].room_id,
           guest_name: results[0].guest_name,
-          room_number: results[0].room_number
+          room_number: results[0].room_number,
+          is_table: false
         };
         setSession(activeSession);
         sessionStorage.setItem('nexus_room_service_session', JSON.stringify(activeSession));
@@ -116,11 +133,28 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
     }
   };
 
+  const handleTableLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tableNumber) return;
+    const activeSession: RoomServiceSession = {
+      is_table: true,
+      table_number: tableNumber
+    };
+    setSession(activeSession);
+    sessionStorage.setItem('nexus_room_service_session', JSON.stringify(activeSession));
+    // Por defecto, al estar en mesa el método de pago inicial es pagar en restaurante
+    setPaymentMethod('pending');
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem('nexus_room_service_session');
     setSession(null);
+    setAccessMode('select');
     setCart([]);
     setOrderSuccess(false);
+    setChargeRoomNumber('');
+    setChargeGuestRut('');
+    setChargeError('');
   };
 
   // Cart operations
@@ -175,6 +209,7 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
   const handleSubmitOrder = async () => {
     if (cart.length === 0 || !session || !companyId) return;
     setSubmittingOrder(true);
+    setChargeError('');
     try {
       const orderItems = cart.map(ci => ({
         menu_item_id: ci.menuItem.id,
@@ -183,13 +218,48 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
         notes: ci.notes || null
       }));
 
+      let finalRoomId: string | null = null;
+      let finalBookingId: string | null = null;
+      let finalPaymentStatus = paymentMethod;
+
+      if (session.is_table) {
+        if (paymentMethod === 'charged_to_room') {
+          if (!chargeRoomNumber.trim() || !chargeGuestRut.trim()) {
+            throw new Error('Debes ingresar tu N° de habitación y RUT del huésped.');
+          }
+          
+          setValidatingCharge(true);
+          const { data, error: validationError } = await hotelRpc.validateRoomAccess(
+            companyId,
+            chargeRoomNumber.trim(),
+            chargeGuestRut.trim()
+          );
+          setValidatingCharge(false);
+
+          if (validationError) throw validationError;
+
+          const results = data as any[];
+          if (results && results.length > 0) {
+            finalRoomId = results[0].room_id;
+            finalBookingId = results[0].booking_id;
+          } else {
+            throw new Error('Validación fallida: Habitación o RUT no corresponden a un Check-In activo.');
+          }
+        } else {
+          finalPaymentStatus = 'pending'; // Pagar en caja/mesa
+        }
+      } else {
+        finalRoomId = session.room_id || null;
+        finalBookingId = session.booking_id || null;
+      }
+
       const { data, error } = await hotelRpc.restaurantCreateOrder({
         companyId,
-        source: 'room_service',
-        tableNumber: null,
-        roomId: session.room_id,
-        bookingId: session.booking_id,
-        paymentStatus: paymentMethod,
+        source: session.is_table ? 'table' : 'room_service',
+        tableNumber: session.is_table ? session.table_number || null : null,
+        roomId: finalRoomId,
+        bookingId: finalBookingId,
+        paymentStatus: finalPaymentStatus,
         notes: orderNotes || null,
         items: orderItems
       });
@@ -200,9 +270,17 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
       setCart([]);
       setOrderNotes('');
       setCartOpen(false);
+      
+      // Reset temporal checkout charge states
+      setChargeRoomNumber('');
+      setChargeGuestRut('');
     } catch (err: any) {
       console.error('Error al procesar pedido:', err);
-      alert('Error: ' + (err.message || 'No se pudo registrar el pedido a la habitación. Valida que tu habitación tenga check-in activo.'));
+      if (session.is_table && paymentMethod === 'charged_to_room') {
+        setChargeError(err.message || 'Error al validar el cargo a la habitación.');
+      } else {
+        alert('Error: ' + (err.message || 'No se pudo registrar el pedido. Valida que tu habitación tenga check-in activo.'));
+      }
     } finally {
       setSubmittingOrder(false);
     }
@@ -220,63 +298,156 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
         <div className="glass-card border border-white/5 p-8 relative overflow-hidden shadow-2xl bg-[#090e17] rounded-none">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500" />
           
-          <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center rounded-none mx-auto mb-3">
-              <Utensils className="w-7 h-7" />
-            </div>
-            <h2 className="text-lg font-black text-white uppercase tracking-wider">Servicio de Habitación</h2>
-            <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-widest">Plataforma Segura de Pedidos</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
-                <Hash className="w-3 h-3 text-amber-500" /> N° Habitación
-              </label>
-              <input
-                type="text"
-                required
-                value={roomNumber}
-                onChange={(e) => setRoomNumber(e.target.value)}
-                className="w-full px-3.5 py-3 bg-black/40 border border-white/10 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
-                placeholder="Ej: 104"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
-                <User className="w-3 h-3 text-amber-500" /> RUT del Huésped
-              </label>
-              <input
-                type="text"
-                required
-                value={guestRut}
-                onChange={(e) => setGuestRut(e.target.value)}
-                className="w-full px-3.5 py-3 bg-black/40 border border-white/10 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
-                placeholder="Ej: 12345678-9"
-              />
-            </div>
-
-            {authError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-none text-xs font-semibold leading-relaxed">
-                {authError}
+          {accessMode === 'select' && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="w-14 h-14 bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center rounded-none mx-auto mb-3">
+                  <Utensils className="w-7 h-7" />
+                </div>
+                <h2 className="text-lg font-black text-white uppercase tracking-wider">Restaurante Grand Hotel</h2>
+                <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-widest">Portal de Pedidos Digital</p>
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={authLoading}
-              className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-black rounded-none font-black uppercase tracking-widest text-[10px] transition-colors flex items-center justify-center gap-2 border-none cursor-pointer"
-            >
-              {authLoading ? 'Verificando...' : 'Acceder al Menú'}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+              <div className="space-y-3">
+                <button
+                  onClick={() => setAccessMode('room')}
+                  className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-500/30 text-left transition-all rounded-none group cursor-pointer"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-black text-white uppercase tracking-wider group-hover:text-amber-500 transition-colors">Pedir a la Habitación</span>
+                    <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-all group-hover:translate-x-1" />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">Servicio a la Habitación. Carga directo a tu cuenta del hotel al hacer el check-out.</p>
+                </button>
+
+                <button
+                  onClick={() => setAccessMode('table')}
+                  className="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-500/30 text-left transition-all rounded-none group cursor-pointer"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-black text-white uppercase tracking-wider group-hover:text-amber-500 transition-colors">Pedir desde la Mesa</span>
+                    <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-all group-hover:translate-x-1" />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">Ordena desde tu mesa actual. Puedes pagar directo al mesero/caja o bien cargar a tu habitación.</p>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {accessMode === 'room' && (
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <button 
+                  onClick={() => { setAccessMode('select'); setAuthError(''); }}
+                  className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/5 text-slate-450 hover:text-white cursor-pointer rounded-none transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Atrás</span>
+              </div>
+
+              <div className="text-center mb-6">
+                <h2 className="text-md font-black text-white uppercase tracking-wider">Servicio de Habitación</h2>
+                <p className="text-[9px] text-slate-400 mt-0.5 uppercase font-bold tracking-widest">Valida tu Habitación</p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <Hash className="w-3 h-3 text-amber-500" /> N° Habitación
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={roomNumber}
+                    onChange={(e) => setRoomNumber(e.target.value)}
+                    className="w-full px-3.5 py-3 bg-black/40 border border-white/10 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+                    placeholder="Ej: 101"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <User className="w-3 h-3 text-amber-500" /> RUT del Huésped
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={guestRut}
+                    onChange={(e) => setGuestRut(e.target.value)}
+                    className="w-full px-3.5 py-3 bg-black/40 border border-white/10 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+                    placeholder="Ej: 17257060-7"
+                  />
+                </div>
+
+                {authError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-none text-xs font-semibold leading-relaxed">
+                    {authError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-black rounded-none font-black uppercase tracking-widest text-[10px] transition-colors flex items-center justify-center gap-2 border-none cursor-pointer"
+                >
+                  {authLoading ? 'Verificando...' : 'Acceder al Menú'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          )}
+
+          {accessMode === 'table' && (
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <button 
+                  onClick={() => { setAccessMode('select'); setAuthError(''); }}
+                  className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/5 text-slate-450 hover:text-white cursor-pointer rounded-none transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Atrás</span>
+              </div>
+
+              <div className="text-center mb-6">
+                <h2 className="text-md font-black text-white uppercase tracking-wider">Comensal en Mesa</h2>
+                <p className="text-[9px] text-slate-400 mt-0.5 uppercase font-bold tracking-widest">Selecciona tu Mesa</p>
+              </div>
+
+              <form onSubmit={handleTableLogin} className="space-y-5">
+                <div>
+                  <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <Hash className="w-3 h-3 text-amber-500" /> N° de Mesa
+                  </label>
+                  <select
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    className="w-full px-3.5 py-3 bg-black border border-white/10 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                      <option key={n} value={String(n)}>Mesa {n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-black rounded-none font-black uppercase tracking-widest text-[10px] transition-colors flex items-center justify-center gap-2 border-none cursor-pointer"
+                >
+                  Ver Menú del Restaurante
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          )}
           
           <div className="mt-6 border-t border-white/5 pt-4 flex gap-3 text-[9px] leading-relaxed text-slate-450 font-bold uppercase tracking-wider">
             <Lock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
             <div>
-              Solo los huéspedes con habitaciones activas en check-in pueden ingresar. El cargo a la cuenta se liquida en recepción.
+              {accessMode === 'room' 
+                ? 'Solo los huéspedes con habitaciones activas en check-in pueden ingresar. El cargo a la cuenta se liquida en recepción.'
+                : 'Acceso directo para pedidos en mesa. El cobro puede liquidarse en el restaurante o cargarse a la habitación al checkout.'}
             </div>
           </div>
         </div>
@@ -290,8 +461,17 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
       {/* Session Header */}
       <div className="flex justify-between items-center bg-black/40 border border-white/5 p-4 rounded-none">
         <div>
-          <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest">Sesión de Habitación {session.room_number}</p>
-          <h2 className="text-sm font-black text-white uppercase tracking-tight">Bienvenido, {session.guest_name}</h2>
+          {session.is_table ? (
+            <>
+              <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest">Pedido desde Mesa</p>
+              <h2 className="text-sm font-black text-white uppercase tracking-tight">Mesa {session.table_number}</h2>
+            </>
+          ) : (
+            <>
+              <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest">Sesión de Habitación {session.room_number}</p>
+              <h2 className="text-sm font-black text-white uppercase tracking-tight">Bienvenido, {session.guest_name}</h2>
+            </>
+          )}
         </div>
         <button
           onClick={handleLogout}
@@ -309,7 +489,10 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
           </div>
           <h2 className="text-xl font-black text-white uppercase tracking-tight">¡Tu pedido ha sido recibido!</h2>
           <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-            Hemos enviado tu pedido directamente a la cocina del restaurante. Nuestro personal lo llevará a tu habitación a la brevedad.
+            {session.is_table
+              ? `Hemos enviado tu pedido directamente a la cocina. Nuestro personal lo llevará a la Mesa ${session.table_number} a la brevedad.`
+              : 'Hemos enviado tu pedido directamente a la cocina del restaurante. Nuestro personal lo llevará a tu habitación a la brevedad.'
+            }
           </p>
           <div className="py-2.5 px-4 bg-white/5 rounded-none inline-block border border-white/5 font-mono text-xs text-slate-400">
             N° de Pedido: <span className="text-white font-extrabold uppercase">{lastOrderNumber}</span>
@@ -531,7 +714,10 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
                 <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5">Forma de Cobro</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => setPaymentMethod('charged_to_room')}
+                    onClick={() => {
+                      setPaymentMethod('charged_to_room');
+                      setChargeError('');
+                    }}
                     className={`py-2 px-3 text-[9px] font-black uppercase tracking-wider rounded-none cursor-pointer border transition-colors ${
                       paymentMethod === 'charged_to_room'
                         ? 'bg-amber-500 text-black border-amber-500'
@@ -541,16 +727,55 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
                     Cargo a Habitación
                   </button>
                   <button
-                    onClick={() => setPaymentMethod('pending')}
+                    onClick={() => {
+                      setPaymentMethod('pending');
+                      setChargeError('');
+                    }}
                     className={`py-2 px-3 text-[9px] font-black uppercase tracking-wider rounded-none cursor-pointer border transition-colors ${
                       paymentMethod === 'pending'
                         ? 'bg-amber-500 text-black border-amber-500'
                         : 'bg-black/30 text-slate-400 border-white/5 hover:text-white'
                     }`}
                   >
-                    Pagar al Recibir
+                    {session.is_table ? 'Pagar en Restaurante' : 'Pagar al Recibir'}
                   </button>
                 </div>
+
+                {session.is_table && paymentMethod === 'charged_to_room' && (
+                  <div className="space-y-3 p-3 bg-white/5 border border-white/5 rounded-none mt-2">
+                    <p className="text-[9px] text-amber-500 font-bold uppercase tracking-wider">Datos del Huésped (Check-In Activo)</p>
+                    
+                    <div>
+                      <label className="block text-[8px] text-slate-400 uppercase font-bold tracking-widest mb-1">N° Habitación</label>
+                      <input
+                        type="text"
+                        required
+                        value={chargeRoomNumber}
+                        onChange={(e) => setChargeRoomNumber(e.target.value)}
+                        className="w-full px-2 py-1.5 bg-black/60 border border-white/10 rounded-none text-white outline-none text-xs focus:border-amber-500/30 transition-colors"
+                        placeholder="Ej: 101"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[8px] text-slate-400 uppercase font-bold tracking-widest mb-1">RUT del Huésped</label>
+                      <input
+                        type="text"
+                        required
+                        value={chargeGuestRut}
+                        onChange={(e) => setChargeGuestRut(e.target.value)}
+                        className="w-full px-2 py-1.5 bg-black/60 border border-white/10 rounded-none text-white outline-none text-xs focus:border-amber-500/30 transition-colors"
+                        placeholder="Ej: 17257060-7"
+                      />
+                    </div>
+
+                    {chargeError && (
+                      <div className="p-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-none text-[10px] font-semibold leading-relaxed">
+                        {chargeError}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Global order notes */}
@@ -574,7 +799,7 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
               </div>
               <button
                 onClick={handleSubmitOrder}
-                disabled={submittingOrder || cart.length === 0}
+                disabled={submittingOrder || cart.length === 0 || (session.is_table && paymentMethod === 'charged_to_room' && (!chargeRoomNumber || !chargeGuestRut)) || validatingCharge}
                 className="w-full py-4 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-700 text-black rounded-none font-black uppercase tracking-widest text-xs cursor-pointer transition-colors flex items-center justify-center gap-2"
               >
                 {submittingOrder ? (
@@ -584,13 +809,17 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
                   </>
                 ) : (
                   <>
-                    <span>Confirmar Pedido Habitación {session.room_number}</span>
+                    <span>
+                      {session.is_table
+                        ? `Confirmar Pedido Mesa ${session.table_number}`
+                        : `Confirmar Pedido Habitación ${session.room_number}`
+                      }
+                    </span>
                     <ArrowRight className="w-4.5 h-4.5" />
                   </>
                 )}
               </button>
             </div>
-
           </div>
         </div>
       )}
