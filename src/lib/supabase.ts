@@ -244,4 +244,76 @@ export const hotelRpc = {
       p_company_id: params.companyId,
       p_is_authorized: params.isAuthorized,
     }),
+
+  // Restaurant RPC Helpers
+  restaurantGetCategories: (companyId: string) =>
+    supabase.rpc('restaurant_get_categories', { p_company_id: companyId }),
+
+  restaurantGetMenuItems: (companyId: string) =>
+    supabase.rpc('restaurant_get_menu_items', { p_company_id: companyId }),
+
+  restaurantUpsertCategory: (params: {
+    id: string | null; companyId: string; name: string; sortOrder: number;
+  }) =>
+    supabase.rpc('restaurant_upsert_category', {
+      p_id: params.id,
+      p_company_id: params.companyId,
+      p_name: params.name,
+      p_sort_order: params.sortOrder,
+    }),
+
+  restaurantUpsertMenuItem: (params: {
+    id: string | null; companyId: string; categoryId: string | null;
+    name: string; description: string | null; price: number;
+    imageUrl: string | null; isAvailable: boolean;
+  }) =>
+    supabase.rpc('restaurant_upsert_menu_item', {
+      p_id: params.id,
+      p_company_id: params.companyId,
+      p_category_id: params.categoryId,
+      p_name: params.name,
+      p_description: params.description,
+      p_price: params.price,
+      p_image_url: params.imageUrl,
+      p_is_available: params.isAvailable,
+    }),
+
+  restaurantDeleteCategory: (id: string) =>
+    supabase.rpc('restaurant_delete_category', { p_id: id }),
+
+  restaurantDeleteMenuItem: (id: string) =>
+    supabase.rpc('restaurant_delete_menu_item', { p_id: id }),
+
+  restaurantCreateOrder: (params: {
+    companyId: string; source: string; tableNumber: string | null;
+    roomId: string | null; bookingId: string | null;
+    paymentStatus: string; notes: string | null; items: any[];
+  }) =>
+    supabase.rpc('restaurant_create_order', {
+      p_company_id: params.companyId,
+      p_source: params.source,
+      p_table_number: params.tableNumber,
+      p_room_id: params.roomId,
+      p_booking_id: params.bookingId,
+      p_payment_status: params.paymentStatus,
+      p_notes: params.notes,
+      p_items: params.items,
+    }),
+
+  restaurantGetOrders: (companyId: string) =>
+    supabase.rpc('restaurant_get_orders', { p_company_id: companyId }),
+
+  restaurantUpdateOrderStatus: (orderId: string, status: string) =>
+    supabase.rpc('restaurant_update_order_status', { p_order_id: orderId, p_status: status }),
+
+  restaurantUpdateOrderPayment: (orderId: string, paymentStatus: string) =>
+    supabase.rpc('restaurant_update_order_payment', { p_order_id: orderId, p_payment_status: paymentStatus }),
+
+  validateRoomAccess: (companyId: string, roomNumber: string, guestRut: string) =>
+    supabase.rpc('hotel_validate_room_access', {
+      p_company_id: companyId,
+      p_room_number: roomNumber,
+      p_guest_rut: guestRut,
+    }),
 };
+

@@ -119,3 +119,63 @@ export interface PricingRule {
   adjustment_value: number;
   created_at: string;
 }
+
+export interface MenuCategory {
+  id: string;
+  company_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface MenuItem {
+  id: string;
+  company_id: string;
+  category_id?: string | null;
+  name: string;
+  description?: string | null;
+  price: number;
+  image_url?: string | null;
+  is_available: boolean;
+  created_at: string;
+  
+  // Joins
+  category?: MenuCategory;
+}
+
+export type RestaurantOrderSource = 'room_service' | 'table' | 'walk_in';
+export type RestaurantOrderStatus = 'pending' | 'preparing' | 'delivered' | 'cancelled';
+export type RestaurantPaymentStatus = 'pending' | 'paid_direct' | 'charged_to_room';
+
+export interface RestaurantOrder {
+  id: string;
+  company_id: string;
+  source: RestaurantOrderSource;
+  table_number?: string | null;
+  room_id?: string | null;
+  booking_id?: string | null;
+  status: RestaurantOrderStatus;
+  payment_status: RestaurantPaymentStatus;
+  total_price: number;
+  notes?: string | null;
+  created_at: string;
+
+  // Joins
+  room?: Room;
+  booking?: Booking;
+  items?: RestaurantOrderItem[];
+}
+
+export interface RestaurantOrderItem {
+  id: string;
+  order_id: string;
+  menu_item_id: string;
+  quantity: number;
+  unit_price: number;
+  notes?: string | null;
+  created_at: string;
+
+  // Joins
+  menu_item?: MenuItem;
+}
+

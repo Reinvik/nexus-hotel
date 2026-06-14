@@ -7,6 +7,9 @@ import { BookingCalendar } from './components/BookingCalendar';
 import { CleaningDashboard } from './components/CleaningDashboard';
 import { AdminSettings } from './components/AdminSettings';
 import { NexusOwnerDashboard } from './components/NexusOwnerDashboard';
+import { RestaurantMenuAdmin } from './components/RestaurantMenuAdmin';
+import { RestaurantKitchenDashboard } from './components/RestaurantKitchenDashboard';
+import { PublicRoomServicePortal } from './components/PublicRoomServicePortal';
 import { 
   LogOut, 
   User, 
@@ -23,7 +26,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type ViewMode = 'portal' | 'kanban' | 'calendar' | 'cleaning' | 'admin' | 'login' | 'nexusowner';
+type ViewMode = 'portal' | 'kanban' | 'calendar' | 'cleaning' | 'admin' | 'login' | 'nexusowner' | 'restaurant_admin' | 'kitchen' | 'room_service';
 const NEXUS_OWNERS = ['ariel.mellag@gmail.com', 'fariacricardog@gmail.com', 'equipo@belean.cl', 'nbl@sns.cl'];
 const isNexusOwnerEmail = (email?: string) => {
   return NEXUS_OWNERS.includes(email?.toLowerCase() || '');
@@ -50,6 +53,12 @@ function App() {
 
   // Fetch session and profile
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    if (viewParam === 'room_service') {
+      setActiveView('room_service');
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
@@ -286,6 +295,12 @@ function App() {
               Habitaciones
             </button>
             <button
+              onClick={() => setActiveView('room_service')}
+              className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-500 hover:text-amber-400 transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
+            >
+              Servicio Habitación
+            </button>
+            <button
               onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
               className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 hover:text-white transition-all duration-300 cursor-pointer bg-transparent border-none outline-none"
             >
@@ -360,6 +375,34 @@ function App() {
                     style={{ borderColor: activeView === 'admin' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
                   >
                     Ajustes
+                  </button>
+                )}
+
+                {(profile.role === 'admin' || profile.role === 'receptionist' || profile.role === 'cleaner') && (
+                  <button
+                    onClick={() => setActiveView('kitchen')}
+                    className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
+                      activeView === 'kitchen'
+                        ? 'text-white font-black'
+                        : 'border-transparent text-slate-400 hover:text-white'
+                    }`}
+                    style={{ borderColor: activeView === 'kitchen' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
+                  >
+                    Cocina
+                  </button>
+                )}
+
+                {profile.role === 'admin' && (
+                  <button
+                    onClick={() => setActiveView('restaurant_admin')}
+                    className={`px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all border-b-2 bg-transparent border-none outline-none cursor-pointer ${
+                      activeView === 'restaurant_admin'
+                        ? 'text-white font-black'
+                        : 'border-transparent text-slate-400 hover:text-white'
+                    }`}
+                    style={{ borderColor: activeView === 'restaurant_admin' ? 'var(--primary)' : 'transparent', borderBottomWidth: '2px' }}
+                  >
+                    Menú Rest.
                   </button>
                 )}
 
@@ -524,6 +567,12 @@ function App() {
                       Habitaciones
                     </button>
                     <button
+                      onClick={() => { setActiveView('room_service'); setMobileMenuOpen(false); }}
+                      className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-amber-500 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      Servicio Habitación
+                    </button>
+                    <button
                       onClick={() => { document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth', block: 'end' }); setMobileMenuOpen(false); }}
                       className="w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left text-slate-350 hover:bg-white/5 cursor-pointer bg-transparent border-none outline-none"
                     >
@@ -592,6 +641,28 @@ function App() {
                             }`}
                           >
                             Ajustes
+                          </button>
+                        )}
+
+                        {(profile.role === 'admin' || profile.role === 'receptionist' || profile.role === 'cleaner') && (
+                          <button
+                            onClick={() => { setActiveView('kitchen'); setMobileMenuOpen(false); }}
+                            className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
+                              activeView === 'kitchen' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
+                            }`}
+                          >
+                            Cocina
+                          </button>
+                        )}
+
+                        {profile.role === 'admin' && (
+                          <button
+                            onClick={() => { setActiveView('restaurant_admin'); setMobileMenuOpen(false); }}
+                            className={`w-full py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-left transition-all ${
+                              activeView === 'restaurant_admin' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-white/5'
+                            }`}
+                          >
+                            Menú Rest.
                           </button>
                         )}
                       </>
@@ -711,6 +782,15 @@ function App() {
 
             {/* 5. HOTEL INVENTORY & SETTINGS */}
             {activeView === 'admin' && <AdminSettings companyId={companyId} />}
+
+            {/* 7. RESTAURANT MENU ADMIN */}
+            {activeView === 'restaurant_admin' && <RestaurantMenuAdmin companyId={companyId} />}
+
+            {/* 8. RESTAURANT KITCHEN DASHBOARD */}
+            {activeView === 'kitchen' && <RestaurantKitchenDashboard companyId={companyId} />}
+
+            {/* 9. GUEST ROOM SERVICE PORTAL */}
+            {activeView === 'room_service' && <PublicRoomServicePortal companyId={companyId} />}
 
             {/* 6. STAFF LOGIN CARD */}
             {activeView === 'login' && (

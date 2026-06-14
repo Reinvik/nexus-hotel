@@ -1,0 +1,599 @@
+import { useState, useEffect } from 'react';
+import { hotelRpc } from '../lib/supabase';
+import type { MenuCategory, MenuItem } from '../types';
+import { 
+  Utensils, Loader2, LogOut, ShoppingBag, Plus, Minus, ArrowRight, User, Hash, Lock, CheckCircle2
+} from 'lucide-react';
+
+interface PublicRoomServicePortalProps {
+  companyId: string;
+}
+
+interface CartItem {
+  menuItem: MenuItem;
+  quantity: number;
+  notes: string;
+}
+
+interface RoomServiceSession {
+  booking_id: string;
+  room_id: string;
+  guest_name: string;
+  room_number: string;
+}
+
+export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalProps) {
+  // Session states
+  const [session, setSession] = useState<RoomServiceSession | null>(null);
+  const [roomNumber, setRoomNumber] = useState('');
+  const [guestRut, setGuestRut] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+
+  // Menu states
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
+  const [loadingMenu, setLoadingMenu] = useState(false);
+
+  // Cart states
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [orderNotes, setOrderNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'charged_to_room' | 'pending'>('charged_to_room');
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [lastOrderNumber, setLastOrderNumber] = useState('');
+
+  // Item note modal helper
+  const [noteModalItem, setNoteModalItem] = useState<MenuItem | null>(null);
+  const [tempItemNote, setTempItemNote] = useState('');
+
+  useEffect(() => {
+    // Check if session exists in sessionStorage
+    const saved = sessionStorage.getItem('nexus_room_service_session');
+    if (saved) {
+      try {
+        setSession(JSON.parse(saved));
+      } catch (e) {
+        sessionStorage.removeItem('nexus_room_service_session');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (session && companyId) {
+      loadMenu();
+    }
+  }, [session, companyId]);
+
+  async function loadMenu() {
+    setLoadingMenu(true);
+    try {
+      const { data: catData, error: catError } = await hotelRpc.restaurantGetCategories(companyId);
+      if (catError) throw catError;
+      setCategories((catData as any[]) || []);
+
+      const { data: itemData, error: itemError } = await hotelRpc.restaurantGetMenuItems(companyId);
+      if (itemError) throw itemError;
+      // Filter only available items
+      const availableItems = ((itemData as MenuItem[]) || []).filter(item => item.is_available);
+      setMenuItems(availableItems);
+    } catch (err) {
+      console.error('Error al cargar menú:', err);
+    } finally {
+      setLoadingMenu(false);
+    }
+  }
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!roomNumber.trim() || !guestRut.trim() || !companyId) return;
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      const { data, error } = await hotelRpc.validateRoomAccess(companyId, roomNumber, guestRut);
+      if (error) throw error;
+      
+      const results = data as any[];
+      if (results && results.length > 0) {
+        const activeSession: RoomServiceSession = {
+          booking_id: results[0].booking_id,
+          room_id: results[0].room_id,
+          guest_name: results[0].guest_name,
+          room_number: results[0].room_number
+        };
+        setSession(activeSession);
+        sessionStorage.setItem('nexus_room_service_session', JSON.stringify(activeSession));
+      } else {
+        setAuthError('Acceso denegado. Verifica el N° de habitación y tu RUT de reserva (debe estar en Check-In activo).');
+      }
+    } catch (err) {
+      console.error('Error al validar acceso:', err);
+      setAuthError('Ocurrió un error al validar tus datos. Inténtalo nuevamente.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('nexus_room_service_session');
+    setSession(null);
+    setCart([]);
+    setOrderSuccess(false);
+  };
+
+  // Cart operations
+  const addToCart = (item: MenuItem, quantity: number = 1, notes: string = '') => {
+    setCart(prev => {
+      const existing = prev.find(ci => ci.menuItem.id === item.id);
+      if (existing) {
+        return prev.map(ci => 
+          ci.menuItem.id === item.id 
+            ? { ...ci, quantity: ci.quantity + quantity, notes: notes || ci.notes } 
+            : ci
+        );
+      }
+      return [...prev, { menuItem: item, quantity, notes }];
+    });
+  };
+
+  const updateQuantity = (itemId: string, delta: number) => {
+    setCart(prev => {
+      return prev.map(ci => {
+        if (ci.menuItem.id === itemId) {
+          const newQty = ci.quantity + delta;
+          return newQty > 0 ? { ...ci, quantity: newQty } : null;
+        }
+        return ci;
+      }).filter(Boolean) as CartItem[];
+    });
+  };
+
+  const handleOpenNoteModal = (item: MenuItem) => {
+    const cartItem = cart.find(ci => ci.menuItem.id === item.id);
+    setTempItemNote(cartItem ? cartItem.notes : '');
+    setNoteModalItem(item);
+  };
+
+  const handleSaveItemNote = () => {
+    if (noteModalItem) {
+      const existing = cart.find(ci => ci.menuItem.id === noteModalItem.id);
+      if (existing) {
+        setCart(prev => prev.map(ci => 
+          ci.menuItem.id === noteModalItem.id ? { ...ci, notes: tempItemNote } : ci
+        ));
+      } else {
+        addToCart(noteModalItem, 1, tempItemNote);
+      }
+      setNoteModalItem(null);
+    }
+  };
+
+  const cartTotal = cart.reduce((sum, ci) => sum + (ci.menuItem.price * ci.quantity), 0);
+
+  const handleSubmitOrder = async () => {
+    if (cart.length === 0 || !session || !companyId) return;
+    setSubmittingOrder(true);
+    try {
+      const orderItems = cart.map(ci => ({
+        menu_item_id: ci.menuItem.id,
+        quantity: ci.quantity,
+        unit_price: ci.menuItem.price,
+        notes: ci.notes || null
+      }));
+
+      const { data, error } = await hotelRpc.restaurantCreateOrder({
+        companyId,
+        source: 'room_service',
+        tableNumber: null,
+        roomId: session.room_id,
+        bookingId: session.booking_id,
+        paymentStatus: paymentMethod,
+        notes: orderNotes || null,
+        items: orderItems
+      });
+
+      if (error) throw error;
+      setLastOrderNumber(String(data).substring(0, 8));
+      setOrderSuccess(true);
+      setCart([]);
+      setOrderNotes('');
+      setCartOpen(false);
+    } catch (err: any) {
+      console.error('Error al procesar pedido:', err);
+      alert('Error: ' + (err.message || 'No se pudo registrar el pedido a la habitación. Valida que tu habitación tenga check-in activo.'));
+    } finally {
+      setSubmittingOrder(false);
+    }
+  };
+
+  // Filtered menu items
+  const filteredItems = selectedCategoryId === 'all'
+    ? menuItems
+    : menuItems.filter(item => item.category_id === selectedCategoryId);
+
+  // Login Form View
+  if (!session) {
+    return (
+      <div className="max-w-md mx-auto my-6 sm:my-12 px-4">
+        <div className="glass-card border border-white/5 p-8 relative overflow-hidden shadow-2xl bg-[#090e17] rounded-none">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500" />
+          
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center rounded-none mx-auto mb-3">
+              <Utensils className="w-7 h-7" />
+            </div>
+            <h2 className="text-lg font-black text-white uppercase tracking-wider">Servicio de Habitación</h2>
+            <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-widest">Plataforma Segura de Pedidos</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
+                <Hash className="w-3 h-3 text-amber-500" /> N° Habitación
+              </label>
+              <input
+                type="text"
+                required
+                value={roomNumber}
+                onChange={(e) => setRoomNumber(e.target.value)}
+                className="w-full px-3.5 py-3 bg-black/40 border border-white/10 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+                placeholder="Ej: 104"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5 flex items-center gap-1.5">
+                <User className="w-3 h-3 text-amber-500" /> RUT del Huésped
+              </label>
+              <input
+                type="text"
+                required
+                value={guestRut}
+                onChange={(e) => setGuestRut(e.target.value)}
+                className="w-full px-3.5 py-3 bg-black/40 border border-white/10 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors"
+                placeholder="Ej: 12345678-9"
+              />
+            </div>
+
+            {authError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-none text-xs font-semibold leading-relaxed">
+                {authError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-black rounded-none font-black uppercase tracking-widest text-[10px] transition-colors flex items-center justify-center gap-2 border-none cursor-pointer"
+            >
+              {authLoading ? 'Verificando...' : 'Acceder al Menú'}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+          
+          <div className="mt-6 border-t border-white/5 pt-4 flex gap-3 text-[9px] leading-relaxed text-slate-450 font-bold uppercase tracking-wider">
+            <Lock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+            <div>
+              Solo los huéspedes con habitaciones activas en check-in pueden ingresar. El cargo a la cuenta se liquida en recepción.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Room Service Menu View
+  return (
+    <div className="max-w-4xl mx-auto px-4 pb-24 space-y-6 relative">
+      {/* Session Header */}
+      <div className="flex justify-between items-center bg-black/40 border border-white/5 p-4 rounded-none">
+        <div>
+          <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest">Sesión de Habitación {session.room_number}</p>
+          <h2 className="text-sm font-black text-white uppercase tracking-tight">Bienvenido, {session.guest_name}</h2>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="p-2 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 cursor-pointer rounded-none transition-colors"
+          title="Cerrar Sesión"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
+      </div>
+
+      {orderSuccess ? (
+        <div className="glass-card border border-white/5 bg-black/30 p-8 text-center space-y-4 rounded-none">
+          <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center rounded-none mx-auto">
+            <CheckCircle2 className="w-9 h-9" />
+          </div>
+          <h2 className="text-xl font-black text-white uppercase tracking-tight">¡Tu pedido ha sido recibido!</h2>
+          <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+            Hemos enviado tu pedido directamente a la cocina del restaurante. Nuestro personal lo llevará a tu habitación a la brevedad.
+          </p>
+          <div className="py-2.5 px-4 bg-white/5 rounded-none inline-block border border-white/5 font-mono text-xs text-slate-400">
+            N° de Pedido: <span className="text-white font-extrabold uppercase">{lastOrderNumber}</span>
+          </div>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+            Tiempo estimado: 25 - 35 minutos
+          </p>
+          <button
+            onClick={() => setOrderSuccess(false)}
+            className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-black text-xs font-black uppercase tracking-wider rounded-none cursor-pointer mt-4"
+          >
+            Hacer Otro Pedido
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Menu category selectors */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4">
+            <button
+              onClick={() => setSelectedCategoryId('all')}
+              className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-none shrink-0 cursor-pointer border transition-all ${
+                selectedCategoryId === 'all'
+                  ? 'bg-amber-500 text-black border-amber-500'
+                  : 'bg-black/30 text-slate-400 border-white/5 hover:text-white'
+              }`}
+            >
+              Todo
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategoryId(cat.id)}
+                className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-none shrink-0 cursor-pointer border transition-all ${
+                  selectedCategoryId === cat.id
+                    ? 'bg-amber-500 text-black border-amber-500'
+                    : 'bg-black/30 text-slate-400 border-white/5 hover:text-white'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Dishes list */}
+          {loadingMenu ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredItems.map((item) => {
+                const inCart = cart.find(ci => ci.menuItem.id === item.id);
+                return (
+                  <div key={item.id} className="glass-card border border-white/5 bg-black/30 p-5 flex flex-col justify-between rounded-none">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-white tracking-tight uppercase mb-1">{item.name}</h3>
+                      <p className="text-[11px] text-slate-400 leading-relaxed mb-4">{item.description || 'Delicioso plato preparado al instante por nuestro chef.'}</p>
+                    </div>
+
+                    <div className="flex justify-between items-center border-t border-white/5 pt-4 mt-auto">
+                      <span className="text-sm font-black text-amber-500 font-mono">
+                        ${Number(item.price).toLocaleString('es-CL')}
+                      </span>
+                      
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenNoteModal(item)}
+                          className="px-2.5 py-1.5 border border-white/10 hover:border-amber-500/30 text-[10px] text-slate-400 hover:text-amber-500 font-bold uppercase tracking-wider rounded-none cursor-pointer transition-colors"
+                        >
+                          {inCart && inCart.notes ? 'Ver Nota' : 'Nota'}
+                        </button>
+                        
+                        {inCart ? (
+                          <div className="flex items-center bg-white/5 border border-white/5 rounded-none">
+                            <button
+                              onClick={() => updateQuantity(item.id, -1)}
+                              className="p-1.5 text-slate-400 hover:text-white cursor-pointer"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="px-2.5 text-xs font-black text-white font-mono">{inCart.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.id, 1)}
+                              className="p-1.5 text-slate-400 hover:text-white cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => addToCart(item)}
+                            className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-black uppercase tracking-widest rounded-none cursor-pointer transition-colors"
+                          >
+                            Agregar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {filteredItems.length === 0 && (
+                <div className="col-span-full text-center py-20 text-slate-500 border border-dashed border-white/5 rounded-none">
+                  <p className="text-[10px] font-black uppercase tracking-wider">No hay platos disponibles en esta categoría</p>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Floating Cart Bar (Bottom screen) */}
+      {cart.length > 0 && !orderSuccess && (
+        <div className="fixed bottom-4 left-4 right-4 z-50 max-w-lg mx-auto">
+          <button
+            onClick={() => setCartOpen(true)}
+            className="w-full p-4 bg-amber-500 hover:bg-amber-600 text-black font-black uppercase tracking-widest text-[11px] rounded-none cursor-pointer shadow-2xl flex justify-between items-center transition-all animate-bounce"
+          >
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4" />
+              <span>Ver Pedido ({cart.reduce((s, ci) => s + ci.quantity, 0)})</span>
+            </div>
+            <span className="font-mono text-xs">${cartTotal.toLocaleString('es-CL')}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Item Note Modal */}
+      {noteModalItem && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-sm glass-card border border-white/10 bg-[#090e17] rounded-none shadow-2xl overflow-hidden">
+            <div className="h-1 bg-amber-500 w-full" />
+            <div className="p-6">
+              <h3 className="text-sm font-black uppercase tracking-wider text-white mb-2">Instrucciones Especiales</h3>
+              <p className="text-[10px] text-slate-450 uppercase font-black tracking-widest mb-4">{noteModalItem.name}</p>
+              <textarea
+                value={tempItemNote}
+                onChange={(e) => setTempItemNote(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2.5 bg-black/40 border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors resize-none"
+                placeholder="Ej: Sin sal, cocción media, aderezos aparte..."
+              />
+              <div className="flex gap-2 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setNoteModalItem(null)}
+                  className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-none text-[10px] font-black uppercase tracking-wider cursor-pointer border border-white/5"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveItemNote}
+                  className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-black rounded-none text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                >
+                  Confirmar Nota
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cart Sidebar/Overlay Drawer */}
+      {cartOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex justify-end">
+          <div className="w-full max-w-md bg-[#090e17] border-l border-white/10 p-6 flex flex-col justify-between shadow-2xl relative">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
+            
+            {/* Drawer Header */}
+            <div>
+              <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
+                <h3 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
+                  <ShoppingBag className="w-4.5 h-4.5 text-amber-500" />
+                  Tu Pedido
+                </h3>
+                <button
+                  onClick={() => setCartOpen(false)}
+                  className="text-slate-400 hover:text-white font-extrabold uppercase text-[10px] tracking-wider cursor-pointer border border-white/5 px-2.5 py-1.5"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              {/* Cart Items List */}
+              <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-1">
+                {cart.map((ci) => (
+                  <div key={ci.menuItem.id} className="flex justify-between items-start gap-4 border-b border-white/5 pb-3">
+                    <div className="space-y-1">
+                      <p className="text-xs font-black text-white uppercase tracking-wide">{ci.menuItem.name}</p>
+                      {ci.notes && (
+                        <p className="text-[9px] text-amber-500 italic font-semibold">Obs: {ci.notes}</p>
+                      )}
+                      <div className="flex items-center gap-1 mt-1">
+                        <button
+                          onClick={() => updateQuantity(ci.menuItem.id, -1)}
+                          className="p-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="px-2 text-xs font-extrabold text-white font-mono">{ci.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(ci.menuItem.id, 1)}
+                          className="p-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <span className="font-mono text-xs text-amber-500 shrink-0">
+                      ${(ci.menuItem.price * ci.quantity).toLocaleString('es-CL')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Order payment option */}
+              <div className="space-y-3 pt-6 border-t border-white/5 mt-4">
+                <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest mb-1.5">Forma de Cobro</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setPaymentMethod('charged_to_room')}
+                    className={`py-2 px-3 text-[9px] font-black uppercase tracking-wider rounded-none cursor-pointer border transition-colors ${
+                      paymentMethod === 'charged_to_room'
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'bg-black/30 text-slate-400 border-white/5 hover:text-white'
+                    }`}
+                  >
+                    Cargo a Habitación
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod('pending')}
+                    className={`py-2 px-3 text-[9px] font-black uppercase tracking-wider rounded-none cursor-pointer border transition-colors ${
+                      paymentMethod === 'pending'
+                        ? 'bg-amber-500 text-black border-amber-500'
+                        : 'bg-black/30 text-slate-400 border-white/5 hover:text-white'
+                    }`}
+                  >
+                    Pagar al Recibir
+                  </button>
+                </div>
+              </div>
+
+              {/* Global order notes */}
+              <div className="space-y-1.5 pt-4">
+                <label className="block text-[9px] text-slate-450 uppercase font-black tracking-widest">Notas del Pedido</label>
+                <textarea
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 bg-black/40 border border-white/5 rounded-none text-white font-semibold outline-none text-xs focus:border-amber-500/30 transition-colors resize-none"
+                  placeholder="Ej: Traer platos hondos, cubiertos para 2 personas..."
+                />
+              </div>
+            </div>
+
+            {/* Total and Submit */}
+            <div className="space-y-4 pt-4 border-t border-white/5 mt-auto">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-450">Total Pedido</span>
+                <span className="text-lg font-black text-white font-mono">${cartTotal.toLocaleString('es-CL')}</span>
+              </div>
+              <button
+                onClick={handleSubmitOrder}
+                disabled={submittingOrder || cart.length === 0}
+                className="w-full py-4 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-700 text-black rounded-none font-black uppercase tracking-widest text-xs cursor-pointer transition-colors flex items-center justify-center gap-2"
+              >
+                {submittingOrder ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Procesando Pedido...
+                  </>
+                ) : (
+                  <>
+                    <span>Confirmar Pedido Habitación {session.room_number}</span>
+                    <ArrowRight className="w-4.5 h-4.5" />
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
