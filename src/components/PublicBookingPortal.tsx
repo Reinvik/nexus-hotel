@@ -83,9 +83,10 @@ const getRoomCapacity = (type: string) => {
 interface PublicBookingPortalProps {
   profile?: Profile | null;
   session?: any;
+  setActiveView?: (view: any) => void;
 }
 
-export function PublicBookingPortal({ profile, session: _session }: PublicBookingPortalProps) {
+export function PublicBookingPortal({ profile, session: _session, setActiveView }: PublicBookingPortalProps) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -828,6 +829,61 @@ export function PublicBookingPortal({ profile, session: _session }: PublicBookin
                   {features.length === 0 && (
                     <p className="col-span-4 text-center text-xs text-slate-500 font-bold uppercase tracking-wider py-4">Sin servicios configurados.</p>
                   )}
+                </div>
+              </div>
+
+              {/* Restaurant Section */}
+              <div id="restaurant-section" className="relative group glass-card p-6 md:p-8 border border-white/5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                {/* Left side: Story & Order */}
+                <div className="md:col-span-7 space-y-4 text-left order-2 md:order-1">
+                  <span className="text-[10px] text-amber-500 font-extrabold uppercase tracking-widest block">Experiencia Gastronómica</span>
+                  <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">
+                    Nuestro Restaurante & Room Service
+                  </h2>
+                  <p className="text-xs md:text-sm text-slate-400 leading-relaxed font-medium">
+                    Disfruta de una exquisita selección de platos internacionales y locales preparados por nuestros chefs ejecutivos. Ofrecemos servicio a la habitación totalmente integrado para que disfrutes de la mejor gastronomía sin salir de tu comodidad.
+                  </p>
+                  
+                  <ul className="space-y-2 text-[10px] uppercase font-bold text-slate-350 tracking-wider">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-amber-500" />
+                      <span>Servicio directo a la habitación</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-amber-500" />
+                      <span>Ingredientes orgánicos y de origen local</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-amber-500" />
+                      <span>Cobro directo o con cargo a tu cuenta del hotel</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <button 
+                      onClick={() => {
+                        if (setActiveView) {
+                          setActiveView('room_service');
+                        } else {
+                          window.location.search = '?view=room_service';
+                        }
+                      }}
+                      className="px-6 py-3 rounded-none text-[10px] font-black uppercase tracking-[0.2em] text-black bg-amber-500 hover:bg-amber-600 flex items-center gap-2 transition-all hover:translate-y-[-2px] shadow-lg shadow-black/30 border-none outline-none cursor-pointer"
+                    >
+                      Pedir a la Habitación / Ver Menú
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right side: Premium Food Image */}
+                <div className="md:col-span-5 h-48 md:h-full min-h-[220px] rounded-none overflow-hidden relative border border-white/10 shadow-lg shadow-black/20 order-1 md:order-2">
+                  <img 
+                    src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=600&q=80" 
+                    alt="Restaurant dining" 
+                    className="w-full h-full object-cover" 
+                  />
+                  <div className="absolute inset-0 bg-amber-500/10" />
                 </div>
               </div>
 

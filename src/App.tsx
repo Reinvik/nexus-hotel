@@ -769,7 +769,7 @@ function App() {
             {activeView === 'nexusowner' && <NexusOwnerDashboard ownerEmail={profile?.email} />}
 
             {/* 1. PUBLIC BOOKING PORTAL */}
-            {activeView === 'portal' && <PublicBookingPortal profile={profile} session={session} />}
+            {activeView === 'portal' && <PublicBookingPortal profile={profile} session={session} setActiveView={setActiveView} />}
 
             {/* 2. KANBAN OPERATION BOARD */}
             {activeView === 'kanban' && <RoomKanban companyId={companyId} />}
