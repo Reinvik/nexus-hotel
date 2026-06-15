@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { hotelRpc } from '../lib/supabase';
 import type { MenuCategory, MenuItem } from '../types';
 import { 
-  Utensils, Loader2, LogOut, ShoppingBag, Plus, Minus, ArrowRight, User, Hash, Lock, CheckCircle2, ArrowLeft
+  Utensils, Loader2, LogOut, ShoppingBag, Plus, Minus, ArrowRight, User, Hash, Lock, CheckCircle2, ArrowLeft, Clock
 } from 'lucide-react';
 
 interface PublicRoomServicePortalProps {
@@ -82,6 +82,10 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
   const [authLoading, setAuthLoading] = useState(false);
   const [scanningQr, setScanningQr] = useState(false);
 
+  // Active orders track states
+  const [activeOrderIds, setActiveOrderIds] = useState<string[]>([]);
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
+
   // Menu states
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -106,6 +110,56 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
   // Item note modal helper
   const [noteModalItem, setNoteModalItem] = useState<MenuItem | null>(null);
   const [tempItemNote, setTempItemNote] = useState('');
+
+  // Cargar IDs de órdenes activas de la sesión al montar
+  useEffect(() => {
+    const savedOrders = sessionStorage.getItem('nexus_active_order_ids');
+    if (savedOrders) {
+      try {
+        setActiveOrderIds(JSON.parse(savedOrders));
+      } catch (e) {
+        sessionStorage.removeItem('nexus_active_order_ids');
+      }
+    }
+  }, []);
+
+  // Poll de órdenes activas cada 10 segundos
+  useEffect(() => {
+    if (activeOrderIds.length > 0 && companyId) {
+      loadActiveOrders();
+      const interval = setInterval(loadActiveOrders, 10000);
+      return () => clearInterval(interval);
+    } else {
+      setActiveOrders([]);
+    }
+  }, [activeOrderIds, companyId]);
+
+  async function loadActiveOrders() {
+    if (!companyId || activeOrderIds.length === 0) return;
+    try {
+      const { data, error } = await hotelRpc.restaurantGetOrders(companyId);
+      if (error) throw error;
+      const allOrders = (data as any[]) || [];
+      // Filtrar y ordenar cronológicamente inverso
+      const myOrders = allOrders
+        .filter(o => activeOrderIds.includes(o.id))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setActiveOrders(myOrders);
+    } catch (e) {
+      console.error('Error al cargar pedidos activos:', e);
+    }
+  }
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm('¿Seguro que deseas cancelar este pedido? Se restará el cargo correspondiente.')) return;
+    try {
+      const { error } = await hotelRpc.restaurantUpdateOrderStatus(orderId, 'cancelled');
+      if (error) throw error;
+      loadActiveOrders();
+    } catch (err: any) {
+      alert('Error al cancelar pedido: ' + (err.message || 'No se pudo procesar la cancelación.'));
+    }
+  };
 
   useEffect(() => {
     // 1. Detectar si hay parámetro de mesa en la URL (ej: ?table=5 o ?mesa=5)
@@ -348,7 +402,13 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
       });
 
       if (error) throw error;
-      setLastOrderNumber(String(data).substring(0, 8));
+      const newOrderId = String(data);
+      setLastOrderNumber(newOrderId.substring(0, 8));
+      
+      const updatedIds = [...activeOrderIds, newOrderId];
+      setActiveOrderIds(updatedIds);
+      sessionStorage.setItem('nexus_active_order_ids', JSON.stringify(updatedIds));
+      
       setOrderSuccess(true);
       setCart([]);
       setOrderNotes('');
@@ -663,6 +723,89 @@ export function PublicRoomServicePortal({ companyId }: PublicRoomServicePortalPr
         </div>
       ) : (
         <>
+          {/* Panel de Seguimiento de Pedidos Activos */}
+          {activeOrders.length > 0 && (
+            <div className="space-y-4 mb-8">
+              <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest flex items-center gap-1.5">
+                <Clock className="w-4 h-4 animate-pulse" />
+                Seguimiento de tus Pedidos
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {activeOrders.map((order) => {
+                  const isPending = order.status === 'pending';
+                  const isPreparing = order.status === 'preparing';
+                  const isDelivered = order.status === 'delivered';
+                  
+                  return (
+                    <div key={order.id} className="glass-card border border-white/5 bg-black/35 p-5 space-y-4 rounded-none relative">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-[10px] text-slate-400 font-bold">
+                          Pedido: #{order.id.substring(0, 8)}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-none font-bold text-[9px] uppercase tracking-wider ${
+                          isPending
+                            ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                            : isPreparing
+                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse'
+                            : isDelivered
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                        }`}>
+                          {isPending ? 'Pendiente' : isPreparing ? 'En Cocina' : isDelivered ? 'Entregado' : 'Cancelado'}
+                        </span>
+                      </div>
+
+                      {/* Items */}
+                      <div className="space-y-1.5 text-xs border-t border-b border-white/5 py-3">
+                        {order.items && JSON.parse(JSON.stringify(order.items)).map((item: any, idx: number) => (
+                          <div key={idx} className="flex justify-between">
+                            <span className="text-white font-extrabold uppercase">
+                              <span className="text-amber-500 font-mono mr-1">{item.quantity}x</span> {item.name}
+                            </span>
+                            <span className="font-mono text-slate-400">${(item.unit_price * item.quantity).toLocaleString('es-CL')}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex justify-between items-center pt-1">
+                        <div>
+                          <p className="text-[9px] text-slate-500 font-black uppercase tracking-wider">Total</p>
+                          <p className="font-mono text-xs font-black text-amber-500">${Number(order.total_price).toLocaleString('es-CL')}</p>
+                        </div>
+
+                        {(isPending || isPreparing) && (
+                          <div>
+                            {isPending ? (
+                              <button
+                                onClick={() => handleCancelOrder(order.id)}
+                                className="px-3.5 py-1.5 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 hover:border-red-500 text-[10px] font-black uppercase tracking-wider rounded-none cursor-pointer transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            ) : (
+                              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider bg-white/5 border border-white/5 px-2.5 py-1 select-none">
+                                En Preparación
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {isPreparing && (
+                        <p className="text-[9px] text-slate-500 leading-relaxed text-center italic border-t border-white/5 pt-2 mt-2">
+                          💡 Tu pedido ya está en preparación. Si deseas cancelarlo o modificarlo, comunícate con el anexo 9 de recepción.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="border-b border-white/5 pb-2" />
+            </div>
+          )}
+
           {/* Menu category selectors */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4">
             <button

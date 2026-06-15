@@ -12,6 +12,13 @@ export function RestaurantKitchenDashboard({ companyId }: RestaurantKitchenDashb
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'all'>('active');
+  const [timeTrigger, setTimeTrigger] = useState(0);
+
+  useEffect(() => {
+    // Forzar re-renderizado de cronómetros visuales cada 60 segundos
+    const timer = setInterval(() => setTimeTrigger(prev => prev + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     loadOrders();
@@ -19,6 +26,13 @@ export function RestaurantKitchenDashboard({ companyId }: RestaurantKitchenDashb
     const interval = setInterval(loadOrders, 10000);
     return () => clearInterval(interval);
   }, [companyId]);
+
+  const getMinutesElapsed = (createdAtString: string) => {
+    const created = new Date(createdAtString);
+    const now = new Date();
+    const diffMs = now.getTime() - created.getTime();
+    return Math.max(0, Math.floor(diffMs / 60000));
+  };
 
   async function loadOrders() {
     if (!companyId) return;
@@ -165,20 +179,44 @@ export function RestaurantKitchenDashboard({ companyId }: RestaurantKitchenDashb
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredOrders.map((order) => (
-          <div key={order.id} className="glass-card border border-white/5 bg-black/30 p-5 flex flex-col justify-between space-y-4">
-            
-            {/* Top Info */}
-            <div>
-              <div className="flex justify-between items-start gap-2 mb-3">
-                <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-none ${getSourceStyles(order.source)}`}>
-                  {getSourceLabel(order.source)}
-                </span>
-                <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-none ${getStatusStyles(order.status)}`}>
-                  {getStatusLabel(order.status)}
-                </span>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-time-trigger={timeTrigger}>
+        {filteredOrders.map((order) => {
+          const minutesElapsed = getMinutesElapsed(order.created_at);
+          const isOverSla = minutesElapsed >= 20 && (order.status === 'pending' || order.status === 'preparing');
+
+          return (
+            <div 
+              key={order.id} 
+              className={`glass-card p-5 flex flex-col justify-between space-y-4 transition-all duration-300 ${
+                isOverSla 
+                  ? 'border-red-500/80 bg-red-950/15 shadow-[0_0_15px_rgba(239,68,68,0.15)] animate-pulse-subtle' 
+                  : 'border-white/5 bg-black/30'
+              }`}
+            >
+              
+              {/* Top Info */}
+              <div>
+                <div className="flex justify-between items-start gap-2 mb-3">
+                  <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-none ${getSourceStyles(order.source)}`}>
+                    {getSourceLabel(order.source)}
+                  </span>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {(order.status === 'pending' || order.status === 'preparing') && (
+                      <span className={`flex items-center gap-1 text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-none border ${
+                        isOverSla 
+                          ? 'text-red-400 border-red-500/30 bg-red-500/10' 
+                          : 'text-slate-400 border-white/5 bg-white/5'
+                      }`}>
+                        <Clock className="w-2.5 h-2.5" />
+                        {minutesElapsed}m
+                      </span>
+                    )}
+                    <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-none ${getStatusStyles(order.status)}`}>
+                      {getStatusLabel(order.status)}
+                    </span>
+                  </div>
+                </div>
 
               {/* Destination/Location Detail */}
               <div className="flex items-center gap-2 text-white font-black text-sm uppercase tracking-tight mb-3">
@@ -311,7 +349,7 @@ export function RestaurantKitchenDashboard({ companyId }: RestaurantKitchenDashb
             </div>
 
           </div>
-        ))}
+        )})}
 
         {filteredOrders.length === 0 && (
           <div className="col-span-full text-center py-20 text-slate-500 border border-dashed border-white/5 rounded-none">
