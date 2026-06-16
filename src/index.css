@@ -336,3 +336,160 @@ main .bg-slate-500\/5 {
   animation: scanner-laser 3s infinite ease-in-out;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   RESTAURANT PORTAL — SISTEMA DE DISEÑO OSCURO AISLADO
+   Usa data-portal="restaurant" como escudo contra las sobreescrituras
+   del tema claro del dashboard principal.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Variables del tema oscuro del portal */
+[data-portal="restaurant"] {
+  --rp-bg:        #07090f;
+  --rp-surface:   #0d1117;
+  --rp-card:      #111827;
+  --rp-border:    rgba(255, 255, 255, 0.07);
+  --rp-border-hover: rgba(255, 255, 255, 0.12);
+  --rp-gold:      #f59e0b;
+  --rp-gold-dim:  rgba(245, 158, 11, 0.12);
+  --rp-text-h:    #f1f5f9;   /* Títulos — blanco cálido */
+  --rp-text-1:    #cbd5e1;   /* Texto principal — slate-300 */
+  --rp-text-2:    #94a3b8;   /* Texto secundario — slate-400 */
+  --rp-text-3:    #64748b;   /* Texto terciario — slate-500 */
+  --rp-red:       #f87171;
+  --rp-red-bg:    rgba(239, 68, 68, 0.08);
+  --rp-red-border:rgba(239, 68, 68, 0.2);
+  color-scheme: dark;
+}
+
+/* Reset suave para el portal de restaurante oscuro */
+[data-portal="restaurant"] {
+  background-color: var(--rp-bg) !important;
+  color: var(--rp-text-1) !important;
+}
+
+/* Fondos específicos por capa */
+[data-portal="restaurant"] { background-color: var(--rp-bg) !important; }
+
+[data-portal="restaurant"] .rp-surface { background-color: var(--rp-surface) !important; }
+[data-portal="restaurant"] .rp-card    { background-color: var(--rp-card) !important; }
+[data-portal="restaurant"] .rp-card-deep { background-color: #0a0e16 !important; }
+
+/* Textos por jerarquía */
+[data-portal="restaurant"] .rp-h     { color: var(--rp-text-h) !important; }
+[data-portal="restaurant"] .rp-text  { color: var(--rp-text-1) !important; }
+[data-portal="restaurant"] .rp-muted { color: var(--rp-text-2) !important; }
+[data-portal="restaurant"] .rp-faint { color: var(--rp-text-3) !important; }
+[data-portal="restaurant"] .rp-gold  { color: var(--rp-gold)   !important; }
+[data-portal="restaurant"] .rp-red   { color: var(--rp-red)    !important; }
+
+/* Bordes */
+[data-portal="restaurant"] .rp-border          { border-color: var(--rp-border)       !important; }
+[data-portal="restaurant"] .rp-border-hover:hover { border-color: var(--rp-border-hover) !important; }
+[data-portal="restaurant"] .rp-border-gold     { border-color: var(--rp-gold)          !important; }
+[data-portal="restaurant"] .rp-border-red      { border-color: var(--rp-red-border)    !important; }
+[data-portal="restaurant"] .rp-border-t        { border-top-color: var(--rp-border)    !important; }
+[data-portal="restaurant"] .rp-border-b        { border-bottom-color: var(--rp-border) !important; }
+
+/* Inputs y Textareas — máxima prioridad */
+[data-portal="restaurant"] input,
+[data-portal="restaurant"] textarea,
+[data-portal="restaurant"] select {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  outline: none !important;
+}
+[data-portal="restaurant"] input::placeholder,
+[data-portal="restaurant"] textarea::placeholder {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+[data-portal="restaurant"] input:focus,
+[data-portal="restaurant"] textarea:focus,
+[data-portal="restaurant"] select:focus {
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1) !important;
+}
+[data-portal="restaurant"] select option {
+  background-color: #111827 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Botón dorado principal */
+[data-portal="restaurant"] .rp-btn-gold {
+  background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+  color: #0f172a !important;
+  border: none !important;
+}
+[data-portal="restaurant"] .rp-btn-gold:hover { filter: brightness(1.1) !important; }
+[data-portal="restaurant"] .rp-btn-gold:disabled {
+  background: #1e293b !important;
+  color: #475569 !important;
+}
+
+/* Botón fantasma / secundario */
+[data-portal="restaurant"] .rp-btn-ghost {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--rp-text-2) !important;
+  border-color: var(--rp-border) !important;
+}
+[data-portal="restaurant"] .rp-btn-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.09) !important;
+  color: var(--rp-text-1) !important;
+}
+
+/* Tarjeta de forma de pago seleccionada */
+[data-portal="restaurant"] .rp-pay-active {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  border-color: #f59e0b !important;
+  color: #fbbf24 !important;
+}
+[data-portal="restaurant"] .rp-pay-inactive {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--rp-border) !important;
+  color: var(--rp-text-2) !important;
+}
+[data-portal="restaurant"] .rp-pay-inactive:hover {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  color: var(--rp-text-1) !important;
+}
+
+/* Error box */
+[data-portal="restaurant"] .rp-error {
+  background-color: var(--rp-red-bg)    !important;
+  border-color:     var(--rp-red-border) !important;
+  color:            var(--rp-red)        !important;
+}
+
+/* Categorías pill inactiva / activa */
+[data-portal="restaurant"] .rp-pill {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--rp-text-2) !important;
+  border-color: var(--rp-border) !important;
+}
+[data-portal="restaurant"] .rp-pill:hover {
+  background-color: rgba(255, 255, 255, 0.09) !important;
+  color: var(--rp-text-1) !important;
+}
+[data-portal="restaurant"] .rp-pill-active {
+  background-color: var(--rp-gold) !important;
+  color: #0f172a !important;
+  border-color: var(--rp-gold) !important;
+}
+
+/* Imágenes — preservar aspecto */
+[data-portal="restaurant"] img {
+  background-color: #111827 !important;
+  color: transparent !important;
+}
+
+/* Íconos Lucide dentro del portal */
+[data-portal="restaurant"] svg { color: inherit !important; }
+
+/* Scrollbar oscuro para el drawer del carrito */
+[data-portal="restaurant"] ::-webkit-scrollbar-thumb {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+}
+[data-portal="restaurant"] ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(245, 158, 11, 0.4) !important;
+}
