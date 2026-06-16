@@ -1572,7 +1572,7 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
-            className="fixed bottom-0 left-0 right-0 z-40 bg-slate-905/95 backdrop-blur-md border-t border-white/10 p-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl keep-dark"
+            className="fixed bottom-0 left-0 right-0 z-40 bg-[#0d1424]/95 backdrop-blur-md border-t border-white/10 p-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl keep-dark"
           >
             <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: themePrimary }} />
             <div className="text-left flex items-center gap-3">
@@ -1581,7 +1581,7 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
               </div>
               <div>
                 <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block">Habitación Seleccionada</span>
-                <h4 className="text-xs font-black text-white uppercase tracking-wider mt-0.5">
+                <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider mt-0.5">
                   #{selectedRoom.room_number} — {selectedRoom.name}
                 </h4>
               </div>
@@ -1590,18 +1590,18 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
               <div className="text-right">
                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Total ({daysCount} noche{daysCount > 1 ? 's' : ''})</span>
-                <span className="text-sm font-black text-white">${paymentAmount.toLocaleString('es-CL')} CLP</span>
+                <span className="text-sm font-black text-slate-200">${paymentAmount.toLocaleString('es-CL')} CLP</span>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedRoom(null)}
-                  className="px-4 py-2 border border-white/10 text-slate-400 hover:text-white rounded-none text-[9px] font-black uppercase tracking-widest transition-colors cursor-pointer bg-transparent"
+                  className="px-4 py-2 border border-white/10 text-slate-400 hover:text-slate-200 rounded-none text-[9px] font-black uppercase tracking-widest transition-colors cursor-pointer bg-transparent"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => setIsBookingModalOpen(true)}
-                  className="px-5 py-2 text-white rounded-none text-[9px] font-black uppercase tracking-widest transition-all shadow-lg hover:brightness-115 active:translate-y-[1px] cursor-pointer"
+                  className="px-5 py-2 text-slate-950 rounded-none text-[9px] font-black uppercase tracking-widest transition-all shadow-lg hover:brightness-115 active:translate-y-[1px] cursor-pointer"
                   style={{ backgroundColor: themePrimary }}
                 >
                   Completar Reserva
