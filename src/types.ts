@@ -159,6 +159,8 @@ export interface RestaurantOrder {
   total_price: number;
   notes?: string | null;
   created_at: string;
+  preparing_at?: string | null;
+  delivered_at?: string | null;
 
   // Joins
   room?: Room;
