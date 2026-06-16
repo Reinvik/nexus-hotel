@@ -112,6 +112,7 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [confirmedBookingInfo, setConfirmedBookingInfo] = useState<any>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   // Hotel Settings & Landing State
   const [settings, setSettings] = useState<any>(null);
@@ -385,9 +386,7 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
     setSelectedRoom(room);
     const calc = getRoomCalculation(room);
     setPaymentAmount(calc.total);
-    setTimeout(() => {
-      document.getElementById('booking-form-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    setIsBookingModalOpen(true);
   };
 
   const handleOpenPayment = (e: React.FormEvent) => {
@@ -397,6 +396,7 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
       return;
     }
     setShowPayment(true);
+    setIsBookingModalOpen(false);
   };
 
   const handlePaymentSuccess = async () => {
@@ -404,6 +404,7 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
     
     setBookingLoading(true);
     setShowPayment(false);
+    setIsBookingModalOpen(false);
 
     try {
       const { data, error } = await hotelRpc.createBooking({
@@ -447,6 +448,7 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
     setGuestEmail('');
     setGuestRut('');
     setNotes('');
+    setIsBookingModalOpen(false);
   };
 
   // Save changes to settings (Supabase remote)
@@ -609,7 +611,10 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
           guestName={guestName}
           roomName={`${selectedRoom.room_number} - ${selectedRoom.name} (${daysCount} noche${daysCount > 1 ? 's' : ''})`}
           onSuccess={handlePaymentSuccess}
-          onCancel={() => setShowPayment(false)}
+          onCancel={() => {
+            setShowPayment(false);
+            setIsBookingModalOpen(true);
+          }}
         />
       )}
 
@@ -726,10 +731,10 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
           </div>
 
           {/* Core Content Booking Section */}
-          <div id="booking-portal-content" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24">
+          <div id="booking-portal-content" className="w-full space-y-12 scroll-mt-24">
             
             {/* Left panel: Filters, About, Amenities, and Room Grid */}
-            <div className="lg:col-span-8 space-y-12">
+            <div className="w-full space-y-12">
               
               {/* Hotel History & Presentation Section */}
               <div id="about-section" className="relative group glass-card p-6 md:p-8 border border-white/5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center scroll-mt-24">
@@ -1073,206 +1078,6 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
                         <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">No hay habitaciones registradas en este hotel</p>
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right panel: Booking Registration Form */}
-            <div className="lg:col-span-4 lg:sticky lg:top-24">
-              <div id="booking-form-section" className="glass-card p-6 border border-slate-200/80 space-y-6 relative overflow-y-auto max-h-[calc(100vh-140px)] custom-scrollbar rounded-none">
-                <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: 'var(--theme-primary)' }} />
-                
-                <div className="border-b border-slate-150 pb-4 text-left">
-                  <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                    Detalles de la Reserva
-                  </h2>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
-                    {activeCompany?.name || 'Hotel'}
-                  </p>
-                </div>
-
-                {logoUrl && (
-                  <div className="w-full flex justify-center py-8 bg-slate-50 rounded-none border border-slate-200/60 shadow-sm">
-                    <img src={logoUrl} alt="Logo" className="h-28 max-w-[90%] object-contain" />
-                  </div>
-                )}
-
-                {selectedRoom ? (
-                  <form onSubmit={handleOpenPayment} className="space-y-4">
-                    {/* Inputs de fecha interactivos integrados en la tarjeta lateral */}
-                    <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-none space-y-3">
-                      <span className="text-[10px] text-slate-700 font-black uppercase tracking-wider block border-b border-slate-200 pb-1.5">
-                        Ajustar Fechas de Estadía
-                      </span>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1 text-left">
-                          <label className="text-[8px] font-black text-slate-550 uppercase tracking-widest">Check-in</label>
-                          <input
-                            type="date"
-                            value={checkIn}
-                            min={format(new Date(), 'yyyy-MM-dd')}
-                            onChange={handleCheckInChange}
-                            className="w-full px-2 py-1.5 bg-white border border-slate-350 rounded-none text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
-                          />
-                        </div>
-                        <div className="space-y-1 text-left">
-                          <label className="text-[8px] font-black text-slate-550 uppercase tracking-widest">Check-out</label>
-                          <input
-                            type="date"
-                            value={checkOut}
-                            min={format(addDays(parseISO(checkIn), 1), 'yyyy-MM-dd')}
-                            onChange={(e) => setCheckOut(e.target.value)}
-                            className="w-full px-2 py-1.5 bg-white border border-slate-350 rounded-none text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Summary Box */}
-                    <div className="bg-slate-50 rounded-none p-4 border border-slate-200/60 space-y-3 text-xs text-left">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500 uppercase font-black">Habitación</span>
-                        <span className="text-slate-900 font-bold">#{selectedRoom.room_number} — {selectedRoom.name} ({getRoomCapacity(selectedRoom.type)})</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500 uppercase font-black">Noches</span>
-                        <span className="text-slate-900 font-bold">{daysCount} noche{daysCount > 1 ? 's' : ''}</span>
-                      </div>
-                      
-                      {/* Desglose interactivo noche a noche */}
-                      {pricingBreakdown.length > 0 && (
-                        <div className="bg-white rounded-none p-3 border border-slate-200/60 space-y-2 mt-2">
-                          <span className="text-[9px] text-slate-550 font-black uppercase tracking-wider block border-b border-slate-150 pb-1">
-                            Desglose de Tarifas
-                          </span>
-                          <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
-                            {pricingBreakdown.map((item, idx) => (
-                              <div key={idx} className="flex justify-between items-start text-[10px]">
-                                <div className="text-slate-700 font-medium">
-                                  <span className="capitalize">{format(item.date, "eeee dd 'de' MMM", { locale: es })}</span>
-                                  {item.ruleName && (
-                                    <span className="text-[8px] font-black block uppercase tracking-tight leading-none mt-0.5" style={{ color: 'var(--theme-primary)' }}>
-                                      {item.ruleName}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-right">
-                                  <span className="text-slate-900 font-bold">
-                                    ${item.finalPrice.toLocaleString('es-CL')}
-                                  </span>
-                                  {item.ruleName && (
-                                    <span className="text-[8px] text-slate-400 block line-through">
-                                      ${item.basePrice.toLocaleString('es-CL')}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="h-[1px] bg-slate-200 my-1" />
-                      <div className="flex justify-between items-center text-sm font-black pt-1">
-                        <span className="text-slate-500 uppercase">Monto Total</span>
-                        <span className="text-slate-900 font-black text-sm">${paymentAmount.toLocaleString('es-CL')} CLP</span>
-                      </div>
-                    </div>
-
-                    {/* Form Inputs */}
-                    <div className="space-y-3 text-left">
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider flex items-center gap-1">
-                          <User className="w-3 h-3" style={{ color: 'var(--theme-primary)' }} /> Nombre Huésped *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Nombre y Apellido"
-                          value={guestName}
-                          onChange={(e) => setGuestName(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider flex items-center gap-1">
-                          <Phone className="w-3 h-3" style={{ color: 'var(--theme-primary)' }} /> WhatsApp de Contacto *
-                        </label>
-                        <input
-                          type="tel"
-                          required
-                          placeholder="Ej: +56 9 1234 5678"
-                          value={guestPhone}
-                          onChange={(e) => setGuestPhone(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider flex items-center gap-1">
-                          <Mail className="w-3 h-3" style={{ color: 'var(--theme-primary)' }} /> Correo Electrónico *
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          placeholder="ejemplo@correo.com"
-                          value={guestEmail}
-                          onChange={(e) => setGuestEmail(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider flex items-center gap-1">
-                          <FileText className="w-3 h-3" style={{ color: 'var(--theme-primary)' }} /> RUT (Para facturación)
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Ej: 12.345.678-9"
-                          value={guestRut}
-                          onChange={(e) => setGuestRut(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase text-slate-550 tracking-wider">Notas adicionales</label>
-                        <textarea
-                          rows={2}
-                          placeholder="Peticiones especiales, horario de arribo, etc."
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-medium outline-none text-xs resize-none focus:border-slate-500"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={bookingLoading}
-                      className="w-full py-4 text-white rounded-none font-black uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg cursor-pointer border-none outline-none"
-                      style={{ 
-                        backgroundColor: themePrimary, 
-                        boxShadow: `0 4px 14px ${themePrimary}4d` 
-                      }}
-                    >
-                      {bookingLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <span>Proceder al Pago con Flow</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </button>
-                  </form>
-                ) : (
-                  <div className="text-center py-8 text-slate-500 space-y-2">
-                    <Bed className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-                    <p className="text-xs uppercase font-black tracking-wider">Sin selección</p>
-                    <p className="text-xs font-medium">Elige una habitación disponible a la izquierda para iniciar tu reserva.</p>
                   </div>
                 )}
               </div>
@@ -1754,6 +1559,280 @@ export function PublicBookingPortal({ profile, session: _session, setActiveView 
                   {saveSettingsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Guardar Plantilla Modular
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sticky Bottom Bar when Room is Selected but Modal is Closed */}
+      <AnimatePresence>
+        {selectedRoom && !isBookingModalOpen && !bookingSuccess && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-40 bg-slate-905/95 backdrop-blur-md border-t border-white/10 p-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl keep-dark"
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: themePrimary }} />
+            <div className="text-left flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                <Bed className="w-4 h-4" style={{ color: themePrimary }} />
+              </div>
+              <div>
+                <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block">Habitación Seleccionada</span>
+                <h4 className="text-xs font-black text-white uppercase tracking-wider mt-0.5">
+                  #{selectedRoom.room_number} — {selectedRoom.name}
+                </h4>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="text-right">
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Total ({daysCount} noche{daysCount > 1 ? 's' : ''})</span>
+                <span className="text-sm font-black text-white">${paymentAmount.toLocaleString('es-CL')} CLP</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedRoom(null)}
+                  className="px-4 py-2 border border-white/10 text-slate-400 hover:text-white rounded-none text-[9px] font-black uppercase tracking-widest transition-colors cursor-pointer bg-transparent"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => setIsBookingModalOpen(true)}
+                  className="px-5 py-2 text-white rounded-none text-[9px] font-black uppercase tracking-widest transition-all shadow-lg hover:brightness-115 active:translate-y-[1px] cursor-pointer"
+                  style={{ backgroundColor: themePrimary }}
+                >
+                  Completar Reserva
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Booking Form Modal Overlay */}
+      <AnimatePresence>
+        {isBookingModalOpen && selectedRoom && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setIsBookingModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="w-full max-w-lg bg-white border border-slate-200 shadow-2xl relative flex flex-col max-h-[90vh] rounded-none text-slate-900"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Banner/Header design line */}
+              <div className="absolute top-0 left-0 right-0 h-1.5" style={{ backgroundColor: themePrimary }} />
+              
+              {/* Modal Header */}
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div className="text-left">
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                    <Bed className="w-5 h-5" style={{ color: themePrimary }} />
+                    Detalles de la Reserva
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest mt-0.5">
+                    {activeCompany?.name || 'Hotel'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsBookingModalOpen(false)}
+                  className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-650 rounded-xl transition-colors cursor-pointer border-none bg-transparent"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar text-slate-900">
+                {logoUrl && (
+                  <div className="w-full flex justify-center py-6 bg-slate-50 rounded-none border border-slate-200/60 shadow-sm">
+                    <img src={logoUrl} alt="Logo" className="h-20 max-w-[90%] object-contain" />
+                  </div>
+                )}
+
+                <form onSubmit={handleOpenPayment} className="space-y-6">
+                  {/* Inputs de fecha interactivos */}
+                  <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-none space-y-3">
+                    <span className="text-[10px] text-slate-700 font-black uppercase tracking-wider block border-b border-slate-200 pb-1.5">
+                      Ajustar Fechas de Estadía
+                    </span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1 text-left">
+                        <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Check-in</label>
+                        <input
+                          type="date"
+                          value={checkIn}
+                          min={format(new Date(), 'yyyy-MM-dd')}
+                          onChange={handleCheckInChange}
+                          className="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-none text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
+                        />
+                      </div>
+                      <div className="space-y-1 text-left">
+                        <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Check-out</label>
+                        <input
+                          type="date"
+                          value={checkOut}
+                          min={format(addDays(parseISO(checkIn), 1), 'yyyy-MM-dd')}
+                          onChange={(e) => setCheckOut(e.target.value)}
+                          className="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-none text-slate-800 font-bold outline-none text-[11px] cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Box */}
+                  <div className="bg-slate-50 rounded-none p-4 border border-slate-200/60 space-y-3 text-xs text-left">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-500 uppercase font-black shrink-0">Habitación</span>
+                      <span className="text-slate-900 font-bold text-right truncate">#{selectedRoom.room_number} — {selectedRoom.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 uppercase font-black">Capacidad</span>
+                      <span className="text-slate-900 font-bold">{getRoomCapacity(selectedRoom.type)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 uppercase font-black">Noches</span>
+                      <span className="text-slate-900 font-bold">{daysCount} noche{daysCount > 1 ? 's' : ''}</span>
+                    </div>
+                    
+                    {/* Desglose interactivo noche a noche */}
+                    {pricingBreakdown.length > 0 && (
+                      <div className="bg-white rounded-none p-3 border border-slate-200/60 space-y-2 mt-2">
+                        <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider block border-b border-slate-200 pb-1">
+                          Desglose de Tarifas
+                        </span>
+                        <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                          {pricingBreakdown.map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-start text-[10px]">
+                              <div className="text-slate-700 font-medium">
+                                <span className="capitalize">{format(item.date, "eeee dd 'de' MMM", { locale: es })}</span>
+                                {item.ruleName && (
+                                  <span className="text-[8px] font-black block uppercase tracking-tight leading-none mt-0.5" style={{ color: themePrimary }}>
+                                    {item.ruleName}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-right text-slate-900">
+                                <span className="font-bold">
+                                  ${item.finalPrice.toLocaleString('es-CL')}
+                                </span>
+                                {item.ruleName && (
+                                  <span className="text-[8px] text-slate-400 block line-through">
+                                    ${item.basePrice.toLocaleString('es-CL')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="h-[1px] bg-slate-200 my-1" />
+                    <div className="flex justify-between items-center text-sm font-black pt-1">
+                      <span className="text-slate-500 uppercase">Monto Total</span>
+                      <span className="text-slate-900 font-black text-sm" style={{ color: themePrimary }}>${paymentAmount.toLocaleString('es-CL')} CLP</span>
+                    </div>
+                  </div>
+
+                  {/* Form Inputs */}
+                  <div className="space-y-4 text-left">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
+                        <User className="w-3 h-3" style={{ color: themePrimary }} /> Nombre Huésped *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nombre y Apellido"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
+                        <Phone className="w-3 h-3" style={{ color: themePrimary }} /> WhatsApp de Contacto *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="Ej: +56 9 1234 5678"
+                        value={guestPhone}
+                        onChange={(e) => setGuestPhone(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
+                        <Mail className="w-3 h-3" style={{ color: themePrimary }} /> Correo Electrónico *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="ejemplo@correo.com"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
+                        <FileText className="w-3 h-3" style={{ color: themePrimary }} /> RUT (Para facturación)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: 12.345.678-9"
+                        value={guestRut}
+                        onChange={(e) => setGuestRut(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-bold outline-none text-xs focus:border-slate-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Notas adicionales</label>
+                      <textarea
+                        rows={2}
+                        placeholder="Peticiones especiales, horario de arribo, etc."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-none text-slate-900 font-medium outline-none text-xs resize-none focus:border-slate-500"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={bookingLoading}
+                    className="w-full py-4 text-white rounded-none font-black uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg cursor-pointer border-none outline-none mt-2"
+                    style={{ 
+                      backgroundColor: themePrimary, 
+                      boxShadow: `0 4px 14px ${themePrimary}4d` 
+                    }}
+                  >
+                    {bookingLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <span>Proceder al Pago con Flow</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
               </div>
             </motion.div>
           </motion.div>
